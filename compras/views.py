@@ -92,12 +92,15 @@ def dashboard_compras(request):
     data_inicio = request.GET.get('data_inicio')
     data_fim = request.GET.get('data_fim')
     projeto_filtro = request.GET.get('projeto')
+    tarefa_filtro = request.GET.get('tarefa')
     exportar_csv = request.GET.get('export_csv')
 
     pedidos_efetivados = DataWarehouseCompras.objects.exclude(status='PENDENTE')
 
     if projeto_filtro:
         pedidos_efetivados = pedidos_efetivados.filter(projeto_cod=projeto_filtro)
+    if tarefa_filtro:
+        pedidos_efetivados = pedidos_efetivados.filter(tarefa_cod=tarefa_filtro)
 
     if data_inicio and data_fim:
         try:
@@ -117,18 +120,28 @@ def dashboard_compras(request):
 
     if exportar_csv == '1':
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="extracao_compras.csv"'
+        response['Content-Disposition'] = 'attachment; filename="base_completa_compras.csv"'
         response.write(u'\ufeff'.encode('utf8'))
 
         writer = csv.writer(response, delimiter=';')
-        writer.writerow(
-            ['Num_SC', 'Num_Pedido', 'Emissão', 'Projeto', 'Tarefa', 'Fornecedor', 'Status', 'Qtd', 'Valor_Unit',
-             'Valor_Total'])
+
+        writer.writerow([
+            'Filial', 'Num_SC', 'Emissao_SC', 'Cod_Produto', 'Descricao',
+            'Projeto_Cod', 'Tarefa_Cod', 'Num_Pedido', 'Emissao_Pedido',
+            'Data_Prev_Recebimento_Fisico', 'Data_Recebimento_Real', 'Cod_Fornecedor',
+            'Nome_Fornecedor', 'Status', 'Qtd_Solicitada', 'Qtd_Pedido', 'Qtd_Recebida',
+            'Valor_Unitario', 'Valor_Total', 'LeadTime_Compras',
+            'LeadTime_Fornecedor', 'Dias_Atraso_Entrega'
+        ])
 
         for obj in pedidos_efetivados:
             writer.writerow([
-                obj.num_sc, obj.num_pedido, obj.emissao_pedido, obj.projeto_cod, obj.tarefa_cod,
-                obj.nome_fornecedor, obj.status, obj.qtd_pedido, obj.valor_unitario, obj.valor_total
+                obj.filial, obj.num_sc, obj.emissao_sc, obj.cod_produto, obj.descricao,
+                obj.projeto_cod, obj.tarefa_cod, obj.num_pedido, obj.emissao_pedido,
+                obj.data_prev_recebimento_fisico, obj.data_recebimento_real, obj.cod_fornecedor,
+                obj.nome_fornecedor, obj.status, obj.qtd_solicitada, obj.qtd_pedido, obj.qtd_recebida,
+                obj.valor_unitario, obj.valor_total, obj.leadtime_compras,
+                obj.leadtime_fornecedor, obj.dias_atraso_entrega
             ])
         return response
 
@@ -137,6 +150,7 @@ def dashboard_compras(request):
 
     backlog_query = DataWarehouseCompras.objects.filter(status='PENDENTE')
     if projeto_filtro: backlog_query = backlog_query.filter(projeto_cod=projeto_filtro)
+    if tarefa_filtro: backlog_query = backlog_query.filter(tarefa_cod=tarefa_filtro)
     backlog_sc = backlog_query.count()
 
     pedidos_entregues = pedidos_efetivados.filter(status='ENTREGUE')
@@ -170,9 +184,12 @@ def dashboard_compras(request):
                            for f in piores_fornecedores]
     fornecedores_data = [float(f['media_atraso']) for f in piores_fornecedores]
 
-    lista_projetos = DataWarehouseCompras.objects.exclude(projeto_cod='').values_list('projeto_cod',
-                                                                                      flat=True).distinct().order_by(
-        'projeto_cod')
+    lista_projetos = DataWarehouseCompras.objects.exclude(projeto_cod='').values_list('projeto_cod', flat=True).distinct().order_by('projeto_cod')
+
+    tarefas_query = DataWarehouseCompras.objects.exclude(tarefa_cod='')
+    if projeto_filtro:
+        tarefas_query = tarefas_query.filter(projeto_cod=projeto_filtro)
+    lista_tarefas = tarefas_query.values_list('tarefa_cod', flat=True).distinct().order_by('tarefa_cod')
 
     context = {
         'spend_total': spend_total,
@@ -188,7 +205,13 @@ def dashboard_compras(request):
         'fornecedores_data': json.dumps(fornecedores_data),
 
         'lista_projetos': lista_projetos,
-        'filtros': {'data_inicio': data_inicio, 'data_fim': data_fim, 'projeto': projeto_filtro}
+        'lista_tarefas': lista_tarefas,
+        'filtros': {
+            'data_inicio': data_inicio,
+            'data_fim': data_fim,
+            'projeto': projeto_filtro,
+            'tarefa': tarefa_filtro
+        }
     }
 
     return render(request, 'compras/dashboard.html', context)

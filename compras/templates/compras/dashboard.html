@@ -30,16 +30,25 @@
                 <label class="form-label small fw-bold">Data Fim</label>
                 <input type="date" name="data_fim" class="form-control form-control-sm" value="{{ filtros.data_fim }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label small fw-bold">Projeto</label>
-                <select name="projeto" class="form-select form-select-sm">
+                <select name="projeto" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">Todos os Projetos</option>
                     {% for proj in lista_projetos %}
                         <option value="{{ proj }}" {% if filtros.projeto == proj %}selected{% endif %}>{{ proj }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-5 d-flex gap-2">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Tarefa</label>
+                <select name="tarefa" class="form-select form-select-sm">
+                    <option value="">Todas as Tarefas</option>
+                    {% for tar in lista_tarefas %}
+                        <option value="{{ tar }}" {% if filtros.tarefa == tar %}selected{% endif %}>{{ tar }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary px-3"><i class="bi bi-funnel me-1"></i> Filtrar</button>
                 <a href="{% url 'dashboard_compras' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eraser me-1"></i> Limpar</a>
 
@@ -53,14 +62,14 @@
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card kpi-card h-100 p-3 border-start border-4 border-success">
-                <div class="kpi-title mb-1">Spend Total (Pedidos)</div>
+                <div class="kpi-title mb-1">Custo Total (Pedidos)</div>
                 <div class="kpi-value">R$ {{ spend_total|floatformat:2 }}</div>
                 <div class="small text-muted mt-2"><i class="bi bi-cash-coin me-1"></i>Volume financeiro efetivado</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card kpi-card h-100 p-3 border-start border-4 border-primary">
-                <div class="kpi-title mb-1">SLA Interno (Lead Time)</div>
+                <div class="kpi-title mb-1">Lead Time Compras</div>
                 <div class="kpi-value">{{ lead_time_compras }} <span class="fs-6 text-muted fw-normal">dias</span></div>
                 <div class="small text-muted mt-2"><i class="bi bi-stopwatch me-1"></i>Tempo médio para emissão</div>
             </div>
@@ -74,7 +83,7 @@
         </div>
         <div class="col-md-3">
             <div class="card kpi-card h-100 p-3 border-start border-4 border-danger">
-                <div class="kpi-title mb-1">SLA Externo (Atrasos)</div>
+                <div class="kpi-title mb-1">Média Atraso Entrega</div>
                 <div class="kpi-value">{{ atraso_medio_fornecedores }} <span class="fs-6 text-muted fw-normal">dias</span></div>
                 <div class="small text-muted mt-2"><i class="bi bi-truck me-1"></i>Atraso médio nas entregas</div>
             </div>
@@ -85,7 +94,7 @@
         <div class="col-md-6">
             <div class="chart-container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-secondary m-0" id="tituloGraficoProjetos">Top 5 Projetos (Clique na barra para detalhes)</h6>
+                    <h6 class="fw-bold text-secondary m-0" id="tituloGraficoProjetos">Top 5 Projetos Maiores Custos (Clique na barra para detalhes)</h6>
                     <button id="btnVoltarDrilldown" class="btn btn-sm btn-outline-primary" style="display: none;" onclick="voltarParaProjetos()">
                         <i class="bi bi-arrow-return-left"></i> Voltar
                     </button>
@@ -96,7 +105,7 @@
 
         <div class="col-md-6">
             <div class="chart-container">
-                <h6 class="fw-bold mb-3 text-secondary">Top 5 Ofensores de Prazo (Fornecedores)</h6>
+                <h6 class="fw-bold mb-3 text-secondary">Top 5 Fornecedores Miores Atrasos</h6>
                 <canvas id="graficoFornecedores"></canvas>
             </div>
         </div>
