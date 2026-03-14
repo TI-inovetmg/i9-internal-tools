@@ -15,4 +15,5 @@ urlpatterns = [
     path('pesquisa-demissional/', views.listar_pesquisas, name='listar_pesquisas'),
     path('pesquisa-demissional/gerar/', views.gerar_pesquisa, name='gerar_pesquisa'),
     path('pesquisa-demissional/responder/<uuid:uuid_pesquisa>/', views.responder_pesquisa, name='responder_pesquisa'),
+    path('pesquisas/', views.listar_pesquisas, name='listar_pesquisas'),
 ]

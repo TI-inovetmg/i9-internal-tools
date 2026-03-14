@@ -1,7 +1,9 @@
+import csv
 from django.db import models
 from django.db.models import Count, Case, When, Value, IntegerField
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from .models import Vaga, Candidatura, SolicitacaoVaga, PesquisaDemissional
@@ -235,20 +237,43 @@ def detalhe_solicitacao(request, pk):
 
 @login_required(login_url='/login/')
 def listar_pesquisas(request):
-    """Painel para o RH gerenciar as pesquisa e copiar os links"""
-    if not (request.user.is_superuser or getattr(request.user, 'is_rh', False)):
-        messages.error(request, 'ERRO: Acesso restrito ao RH')
-        return redirect('home')
-
     pesquisas = PesquisaDemissional.objects.all().order_by('-data_geracao')
-    total_geradas = pesquisas.count()
-    total_respondidas = pesquisas.filter(respondida=True).count()
 
-    return render(request, 'rh/listar_pesquisas.html', {
+    if request.GET.get('export_csv') == '1':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="pesquisas_demissionais.csv"'
+        response.write(u'\ufeff'.encode('utf8'))
+
+        writer = csv.writer(response, delimiter=';')
+
+
+        writer.writerow([
+            'Ex-Colaborador', 'Setor', 'Data Geracao', 'Tempo Casa', 'Periodo Saida', 'Tipo Demissao',
+            'Motivo Saida', 'Nota Lideranca', 'Nota Oportunidade', 'Nota Reconhecimento',
+            'Nota Clima', 'NPS (Recomendacao)', 'O que faria diferente'
+        ])
+
+        for p in pesquisas:
+            if getattr(p, 'respondida', False) or p.nota_lideranca:
+                writer.writerow([
+                    p.ex_funcionario_nome, p.get_setor_display(),
+                    p.data_geracao.strftime("%d/%m/%Y %H:%M") if p.data_geracao else '',
+                    p.tempo_casa, p.periodo_saida, p.tipo_demissao,
+                    p.motivo_saida, p.nota_lideranca, p.nota_oportunidade, p.nota_reconhecimento,
+                    p.nota_clima, p.nota_recomendacao, p.diferente
+                ])
+        return response
+
+    total_geradas = pesquisas.count()
+    total_respondidas = pesquisas.exclude(nota_lideranca__isnull=True).count()
+
+    context = {
         'pesquisas': pesquisas,
         'total_geradas': total_geradas,
         'total_respondidas': total_respondidas,
-    })
+    }
+
+    return render(request, 'rh/listar_pesquisas.html', context)
 
 
 @login_required(login_url='/login/')
