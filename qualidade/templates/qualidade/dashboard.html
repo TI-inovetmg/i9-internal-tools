@@ -55,10 +55,9 @@
             
             // 3. Mapeamento das Colunas (A chave 'field' deve ser idêntica ao seu JSON)
             columns: [
-                {title: "ID", field: "id", width: 80, headerFilter: "input"},
-                
-                // Formatação visual do Status com Badges do Bootstrap
-                {title: "Status", field: "status", width: 150, headerFilter: "select", headerFilterParams: {values: true},
+                {title: "ID", field: "id", width: 70, headerFilter: "input", frozen: true}, // frozen fixa a coluna ao rolar a tela
+
+                {title: "Status", field: "status", width: 140, headerFilter: "select", headerFilterParams: {values: true},
                  formatter: function(cell) {
                      let val = cell.getValue();
                      let color = "secondary";
@@ -66,20 +65,54 @@
                      if(val === "Concluído") color = "success";
                      if(val === "Fora dos trilhos") color = "danger";
                      if(val === "Registro preliminar") color = "warning text-dark";
-                     return `<span class="badge bg-${color}">${val}</span>`;
+                     return `<span class="badge bg-${color} w-100">${val}</span>`;
                  }
                 },
-                
-                {title: "Data Abertura", field: "data_abertura", width: 130, headerFilter: "input"},
+
+                {title: "Registrador (Criador)", field: "registrador", width: 150, headerFilter: "input"},
+                {title: "Detector", field: "detector", width: 120, headerFilter: "select", headerFilterParams: {values: true}},
+                {title: "Data Abertura", field: "data_abertura", width: 120, headerFilter: "input"},
                 {title: "Projeto", field: "projeto_cod", width: 110, headerFilter: "input"},
+                {title: "Elemento Rast.", field: "elemento_rastreador", width: 130, headerFilter: "input"},
+                {title: "Local", field: "local", width: 130, headerFilter: "input"},
+                {title: "Equipamento", field: "equipamento", width: 160, headerFilter: "input"},
+
+                // Classificação e Justificativa
                 {title: "Classificação", field: "classificacao", width: 130, headerFilter: "select", headerFilterParams: {values: true}},
                 {title: "Criticidade", field: "criticidade", width: 110, headerFilter: "select", headerFilterParams: {values: true}},
-                {title: "Equipamento", field: "equipamento", width: 180, headerFilter: "input"},
-                {title: "Local", field: "local", width: 130, headerFilter: "input"},
-                {title: "Tipo NC", field: "tipo_nc", width: 160, headerFilter: "input"},
-                {title: "Registrado por", field: "registrador", width: 150, headerFilter: "input"},
-                {title: "Responsáveis", field: "responsaveis", width: 220, headerFilter: "input"},
-                {title: "Prev. Conclusão", field: "data_prevista_conclusao", width: 140},
+                {title: "Justificativa Criticidade", field: "justificativa_criticidade", width: 250, formatter: "textarea"},
+
+                {title: "Tipo NC", field: "tipo_nc", width: 150, headerFilter: "input"},
+
+                // Textos Longos (Descrições e Ações)
+                {title: "Descrição da NC", field: "descricao", width: 300, formatter: "textarea"},
+                {title: "Correção Imediata", field: "correcao", width: 250, formatter: "textarea"},
+                {title: "Causas Principais", field: "causas_principais", width: 250, formatter: "textarea"},
+                {title: "Ação Corretiva", field: "acao_corretiva", width: 250, formatter: "textarea"},
+                {title: "Eficácia (Texto)", field: "eficacia_texto", width: 250, formatter: "textarea"},
+
+                // Responsáveis e Prazos
+                {title: "Responsáveis", field: "responsaveis", width: 200, headerFilter: "input"},
+                {title: "Prev. Conclusão", field: "data_prevista_conclusao", width: 130},
+                {title: "Encerramento", field: "data_encerramento", width: 130},
+
+                // Mídias e Links
+                {title: "Ishikawa", field: "ishikawa_link", width: 100, formatter: function(cell){
+                    let url = cell.getValue();
+                    if(url) return `<a href="${url}" target="_blank" class="text-primary text-decoration-none"><i class="bi bi-diagram-3"></i> Acessar</a>`;
+                    return "-";
+                }},
+                {title: "Eficácia PDF", field: "eficacia_pdf", width: 110, formatter: function(cell){
+                    let url = cell.getValue();
+                    if(url) return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.75rem;"><i class="bi bi-file-pdf"></i> PDF</a>`;
+                    return "-";
+                }},
+                {title: "Imagens", field: "qtd_imagens", width: 90, formatter: function(cell){
+                    let qtd = cell.getValue();
+                    let url = cell.getRow().getData().primeira_imagem_url;
+                    if(qtd > 0) return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;"><i class="bi bi-image"></i> (${qtd})</a>`;
+                    return "-";
+                }}
             ],
             
             // Tradução nativa para Português
