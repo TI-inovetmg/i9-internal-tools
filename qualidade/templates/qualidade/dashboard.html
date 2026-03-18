@@ -39,7 +39,8 @@
     </div>
 </div>
 
-document.addEventListener('DOMContentLoaded', function() {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
 
     // 1. Inicializa a tabela
     var table = new Tabulator("#tabela-rnc", {
@@ -101,7 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }); // FECHA A TABELA AQUI
 
+    // ==========================================
     // 2. O GATILHO EXTERNO (COM ALARMES VISUAIS)
+    // ==========================================
     table.on("cellEdited", function(cell){
         let id_rnc = cell.getRow().getData().id;
         let campo_editado = cell.getField();
@@ -152,4 +155,5 @@ document.addEventListener('DOMContentLoaded', function() {
         table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
     });
 });
+</script>
 {% endblock %}
