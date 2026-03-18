@@ -39,156 +39,117 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
 
-        var table = new Tabulator("#tabela-rnc", {
-            ajaxURL: "{% url 'api_listar_rncs' %}",
-            layout: "fitDataFill",
-            responsiveLayout: "collapse",
-            pagination: "local",
-            paginationSize: 15,
-            movableColumns: true,
-            initialSort: [{column: "id", dir: "desc"}],
+    // 1. Inicializa a tabela
+    var table = new Tabulator("#tabela-rnc", {
+        ajaxURL: "{% url 'api_listar_rncs' %}",
+        layout: "fitDataFill",
+        responsiveLayout: "collapse",
+        pagination: "local",
+        paginationSize: 15,
+        initialSort: [{column: "id", dir: "desc"}],
 
-            columns: [
-                {title: "ID", field: "id", width: 70, headerFilter: "input", frozen: true},
+        columns: [
+            {title: "ID", field: "id", width: 70, headerFilter: "input", frozen: true},
 
-                {title: "Status", field: "status", width: 140, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true},
-                 editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Fora dos trilhos", "Registro preliminar", "Cancelado"]},
-                 formatter: function(cell) {
-                     let val = cell.getValue();
-                     let color = "secondary";
-                     if(val === "Em andamento") color = "primary";
-                     if(val === "Concluído") color = "success";
-                     if(val === "Fora dos trilhos") color = "danger";
-                     if(val === "Registro preliminar") color = "warning text-dark";
-                     return `<span class="badge bg-${color} w-100">${val}</span>`;
-                 }
-                },
-
-                {title: "Registrador", field: "registrador", width: 150, headerFilter: "input"},
-                {title: "Detector", field: "detector", width: 120, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
-                {title: "Data Abertura", field: "data_abertura", width: 120, headerFilter: "input"},
-                {title: "Projeto", field: "projeto_cod", width: 110, headerFilter: "input"},
-                {title: "Elemento Rast.", field: "elemento_rastreador", width: 130, headerFilter: "input"},
-                {title: "Local", field: "local", width: 130, headerFilter: "input"},
-                {title: "Equipamento", field: "equipamento", width: 160, headerFilter: "input"},
-
-                {title: "Classificação", field: "classificacao", width: 130, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
-                {title: "Criticidade", field: "criticidade", width: 110, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
-                {title: "Justificativa Criticidade", field: "justificativa_criticidade", width: 250, formatter: "textarea", editor: "textarea"},
-
-                {title: "Tipo NC", field: "tipo_nc", width: 150, headerFilter: "input"},
-
-                {title: "Descrição da NC", field: "descricao", width: 300, formatter: "textarea", editor: "textarea"},
-                {title: "Correção Imediata", field: "correcao", width: 250, formatter: "textarea", editor: "textarea"},
-                {title: "Causas Principais", field: "causas_principais", width: 250, formatter: "textarea", editor: "textarea"},
-                {title: "Ação Corretiva", field: "acao_corretiva", width: 250, formatter: "textarea", editor: "textarea"},
-                {title: "Eficácia (Texto)", field: "eficacia_texto", width: 250, formatter: "textarea", editor: "textarea"},
-
-                {title: "Responsáveis", field: "responsaveis", width: 200, headerFilter: "input"},
-
-                {title: "Prev. Conclusão", field: "data_prevista_conclusao", width: 130, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
-                {title: "Encerramento", field: "data_encerramento", width: 130, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
-
-                {title: "Ishikawa", field: "ishikawa_link", width: 100, formatter: function(cell){
-                    let url = cell.getValue();
-                    if(url) return `<a href="${url}" target="_blank" class="text-primary text-decoration-none"><i class="bi bi-diagram-3"></i> Acessar</a>`;
-                    return "-";
-                }},
-                {title: "Eficácia PDF", field: "eficacia_pdf", width: 110, formatter: function(cell){
-                    let url = cell.getValue();
-                    if(url) return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.75rem;"><i class="bi bi-file-pdf"></i> PDF</a>`;
-                    return "-";
-                }},
-                {title: "Imagens", field: "qtd_imagens", width: 90, formatter: function(cell){
-                    let qtd = cell.getValue();
-                    if(qtd > 0) {
-                        let url = cell.getRow().getData().primeira_imagem_url;
-                        return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;"><i class="bi bi-image"></i> (${qtd})</a>`;
-                    }
-                    return "-";
-                }}
-            ],
-
-            locale: "pt-br",
-            langs: {
-                "pt-br": {
-                    "pagination": {
-                        "first": "Primeira", "last": "Última",
-                        "prev": "Anterior", "next": "Próxima"
-                    }
-                }
+            {title: "Status", field: "status", width: 140, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true},
+             editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Fora dos trilhos", "Registro preliminar", "Cancelado"]},
+             formatter: function(cell) {
+                 let val = cell.getValue();
+                 let color = "secondary";
+                 if(val === "Em andamento") color = "primary";
+                 if(val === "Concluído") color = "success";
+                 if(val === "Fora dos trilhos") color = "danger";
+                 if(val === "Registro preliminar") color = "warning text-dark";
+                 return `<span class="badge bg-${color} w-100">${val}</span>`;
+             }
             },
 
-            // Gatilho de Salvamento
-            cellEdited: function(cell){
-                let id_rnc = cell.getRow().getData().id;
-                let campo_editado = cell.getField();
-                let novo_valor = cell.getValue();
+            {title: "Registrador", field: "registrador", width: 150, headerFilter: "input"},
+            {title: "Detector", field: "detector", width: 120, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
+            {title: "Data Abertura", field: "data_abertura", width: 120, headerFilter: "input"},
+            {title: "Projeto", field: "projeto_cod", width: 110, headerFilter: "input"},
+            {title: "Elemento Rast.", field: "elemento_rastreador", width: 130, headerFilter: "input"},
+            {title: "Local", field: "local", width: 130, headerFilter: "input"},
+            {title: "Equipamento", field: "equipamento", width: 160, headerFilter: "input"},
 
-                console.log(`[SGQ] Iniciando salvamento | RNC ID: ${id_rnc} | Coluna: ${campo_editado} | Valor: ${novo_valor}`);
+            {title: "Classificação", field: "classificacao", width: 130, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
+            {title: "Criticidade", field: "criticidade", width: 110, headerFilter: "list", headerFilterParams: {valuesLookup:true, clearable:true}},
+            {title: "Justificativa Criticidade", field: "justificativa_criticidade", width: 250, formatter: "textarea", editor: "textarea"},
 
-                function getCookie(name) {
-                    let cookieValue = null;
-                    if (document.cookie && document.cookie !== '') {
-                        const cookies = document.cookie.split(';');
-                        for (let i = 0; i < cookies.length; i++) {
-                            const cookie = cookies[i].trim();
-                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                                break;
-                            }
-                        }
-                    }
-                    return cookieValue;
-                }
+            {title: "Tipo NC", field: "tipo_nc", width: 150, headerFilter: "input"},
+            {title: "Descrição da NC", field: "descricao", width: 300, formatter: "textarea", editor: "textarea"},
+            {title: "Correção Imediata", field: "correcao", width: 250, formatter: "textarea", editor: "textarea"},
+            {title: "Causas Principais", field: "causas_principais", width: 250, formatter: "textarea", editor: "textarea"},
+            {title: "Ação Corretiva", field: "acao_corretiva", width: 250, formatter: "textarea", editor: "textarea"},
+            {title: "Eficácia (Texto)", field: "eficacia_texto", width: 250, formatter: "textarea", editor: "textarea"},
+            {title: "Responsáveis", field: "responsaveis", width: 200, headerFilter: "input"},
 
-                let csrfToken = getCookie('csrftoken');
+            {title: "Prev. Conclusão", field: "data_prevista_conclusao", width: 130, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
+            {title: "Encerramento", field: "data_encerramento", width: 130, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
 
-                fetch(`/qualidade/api/rncs/${id_rnc}/atualizar/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({
-                        campo: campo_editado,
-                        valor: novo_valor
-                    })
-                })
-                .then(async response => {
-                    if (!response.ok) {
-                        let errText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errText.substring(0, 100)}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if(data.status === 'sucesso'){
-                        console.log("[SGQ] Sucesso! Banco de dados atualizado com segurança.");
-                        cell.getElement().style.transition = "background-color 0.5s ease";
-                        cell.getElement().style.backgroundColor = "#d1e7dd";
-                        setTimeout(() => { cell.getElement().style.backgroundColor = ""; }, 1500);
-                    } else {
-                        console.error("[SGQ] Servidor recusou a atualização:", data.mensagem);
-                        alert("Erro ao salvar: " + data.mensagem);
-                        cell.restoreOldValue();
-                    }
-                })
-                .catch(error => {
-                    console.error("[SGQ] Falha crítica na comunicação:", error);
-                    alert("Falha de rede. O dado retornará ao valor anterior.");
-                    cell.restoreOldValue();
-                });
+            {title: "Ishikawa", field: "ishikawa_link", width: 100, formatter: function(cell){
+                let url = cell.getValue();
+                if(url) return `<a href="${url}" target="_blank" class="text-primary text-decoration-none">Acessar</a>`;
+                return "-";
+            }}
+        ],
+        locale: "pt-br",
+        langs: {
+            "pt-br": { pagination: { first: "Primeira", last: "Última", prev: "Anterior", next: "Próxima" } }
+        }
+    }); // FECHA A TABELA AQUI
+
+    // 2. O GATILHO EXTERNO (COM ALARMES VISUAIS)
+    table.on("cellEdited", function(cell){
+        let id_rnc = cell.getRow().getData().id;
+        let campo_editado = cell.getField();
+        let novo_valor = cell.getValue();
+
+        // ALARME 1: Prova que o clique funcionou
+        alert(`GATILHO DISPARADO!\nTentando salvar RNC: ${id_rnc}\nCampo: ${campo_editado}\nNovo Valor: ${novo_valor}`);
+
+        // Captura o token de segurança diretamente do HTML (Infalível)
+        let csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if(!csrfInput) {
+            alert("ERRO CRÍTICO: Token CSRF não encontrado no HTML!");
+            return;
+        }
+        let csrfToken = csrfInput.value;
+
+        // Dispara para o backend
+        fetch(`/qualidade/api/rncs/${id_rnc}/atualizar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                campo: campo_editado,
+                valor: novo_valor
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'sucesso'){
+                // ALARME 2: Prova que o banco de dados aceitou
+                alert("SUCESSO! O Banco de Dados confirmou a gravação.");
+                cell.getElement().style.backgroundColor = "#d1e7dd";
+            } else {
+                alert("O SERVIDOR RECUSOU: " + data.mensagem);
+                cell.restoreOldValue();
             }
-        });
-
-        // Exportação Excel
-        document.getElementById("download-xlsx").addEventListener("click", function(){
-            table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
+        })
+        .catch(error => {
+            alert("ERRO DE REDE/FETCH: Não conseguiu falar com o servidor.");
+            cell.restoreOldValue();
         });
     });
-</script>
+
+    // Exportação Excel
+    document.getElementById("download-xlsx").addEventListener("click", function(){
+        table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
+    });
+});
 {% endblock %}
