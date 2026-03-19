@@ -1,43 +1,53 @@
+from datetime import datetime
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import RNC
-
+from django.db import transaction
 
 class RNCService:
     @staticmethod
-    def atualizar_rnc(rnc_id, dados_atualizados, usuario_logado):
-        rnc = RNC.objects.get(id=rnc_id)
+    def atualizar_rnc(rnc_id, campo, valor):
+        with transaction.atomic():
+        # Busca a instancia e guarda o estado anterior
+            rnc = RNC.objects.get(id=rnc_id)
+            valor_antigo = getattr(rnc, campo)
 
-        # Guarda estado antigo para comparação
-        responsaveis_antigos = set(rnc.responsaveis.all())
-        data_encerramento_antiga = rnc.data_encerramento
+            # tratamento especial para datas, se o campo for data, convertemos para string do JS
+            if 'data' in campo and isinstance(valor, str) and valor != '':
+                try:
+                    valor = datetime.strptime(valor, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
 
-        # Lógica de atualização dos campos e incremento de versão para concorrência
-        # ... (atualiza os campos baseados no dicionário dados_atualizados)
-        rnc.versao += 1
-        rnc.save()
+            # tratamento especial para status
+            mapa_status = {
+                'Não iniciada': 'NI', 'Em andamento': 'EA', 'Concluido': 'CO', 'Fora dos trilhos': 'FT', 'Registro preliminar': 'PR', 'Cancelado': 'CA'
+            }
+            if campo =='status' and valor in mapa_status:
+                valor = mapa_status[valor]
 
-        # Gatilho 1: Alteração de Data
-        if 'data_encerramento' in dados_atualizados and rnc.data_encerramento != data_encerramento_antiga:
-            RNCService._notificar_data_encerramento(rnc)
+            setattr(rnc, campo, valor)
+            rnc.versao += 1
+            rnc.save(update_fields=[campo, 'versao', 'atualizado_em'])
 
-        # Gatilho 2: Alteração de Responsáveis (requer manipulação M2M)
-        if 'responsaveis_ids' in dados_atualizados:
-            rnc.responsaveis.set(dados_atualizados['responsaveis_ids'])
-            responsaveis_novos = set(rnc.responsaveis.all())
-            if responsaveis_antigos != responsaveis_novos:
-                RNCService._notificar_mudanca_responsaveis(rnc, responsaveis_novos, responsaveis_antigos)
+            # gatilho de email apenas se o valor foi alterado
+            if campo == 'data_encerramento' and valor != valor_antigo:
+                transaction.on_commit(lambda: RNCService._notificar_data_encerramento(rnc.id))
 
         return rnc
 
     @staticmethod
     def _notificar_data_encerramento(rnc):
+        rnc = RNC.objects.get(id=rnc.id)
         emails = [resp.email for resp in rnc.responsaveis.all() if resp.email]
         if emails:
-            send_mail(
-                subject=f'[SGQ] Alteração de Prazo - RNC #{rnc.id}',
-                message=f'A RNC {rnc.id} teve sua data de encerramento alterada para {rnc.data_encerramento}.',
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=emails,
-                fail_silently=True
-            )
+            try:
+                send_mail(
+                    subject=f'[SGQ] Alteração de Prazo - RNC #{rnc.id}',
+                    message=f'A RNC {rnc.id} teve sua data de encerramento alterada para {rnc.data_encerramento}.',
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=emails,
+                    fail_silently=False
+                )
+            except Exception as e:
+                print(f'Erro ao enviar email da RNC {rnc,id}: {e}')
