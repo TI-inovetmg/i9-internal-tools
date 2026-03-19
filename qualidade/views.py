@@ -66,12 +66,27 @@ def api_listar_rncs(request):
 @require_POST
 def api_atualizar_rnc(request, rnc_id):
     try:
-        # Lendo o JSON que vem do Tabulator (Vanilla JS fetch)
         dados = json.loads(request.body)
         campo = dados.get('campo')
         valor = dados.get('valor')
 
-        # Delegamos a inteligência para o Service (Com a transação on_commit)
+        campos_permitidos = [
+            'descricao',
+            'correcao',
+            'causas_principais',
+            'acao_corretiva',
+            'eficacia_texto',
+            'justificativa_criticidade',
+            'status',
+            'data_prevista_conclusao',
+            'data_encerramento'
+        ]
+
+        # Se o utilizador tentar enviar um campo que não está na lista, bloqueamos com erro 403 (Forbidden)
+        if campo not in campos_permitidos:
+            return JsonResponse({'status': 'erro', 'mensagem': 'Edição deste campo não autorizada.'}, status=403)
+
+        # Se passou na segurança, delegamos a inteligência para o Service (Com a transação on_commit)
         RNCService.atualizar_rnc(rnc_id, campo, valor)
         return JsonResponse({'status': 'sucesso'})
 
