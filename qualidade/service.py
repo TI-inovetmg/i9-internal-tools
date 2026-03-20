@@ -62,7 +62,7 @@ class RNCService:
                 f"Atenção, a data de encerramento da RNC foi atualizada.\n\n"
                 f"DETALHES DA RNC:\n"
                 f"- ID: {rnc.id}\n"
-                f"- Equipamento: {nome_equipamento.equipamento}\n"
+                f"- Equipamento: {nome_equipamento}\n"
                 f"- Projeto: {codigo_projeto}\n"
                 f"- Descrição da Não Conformidade: {rnc.descricao}\n\n"
                 f"Nova Data de Encerramento: {rnc.data_encerramento.strftime('%d/%m/%Y') if rnc.data_encerramento else 'Não informado'}\n"
