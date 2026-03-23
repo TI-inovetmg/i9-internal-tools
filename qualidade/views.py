@@ -3,15 +3,21 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from django.core.exceptions import ObjectDoesNotExist
-
-# Importações dos seus modelos e do nosso novo Service
-from .models import RNC
+from .models import RNC, Local, Equipamento, TipoNC
 from .service import RNCService
 
 @login_required(login_url='/login/')
 def dashboard_qualidade(request):
-    return render(request, 'qualidade/dashboard.html')
+    locais_ativos = Local.objects.filter(ativo= True)
+    equipamento_ativos = Equipamento.objects.filter(ativo= True)
+    tipo_nc_ativos = TipoNC.objects.filter(ativo= True)
+
+    context = {
+        'locais': locais_ativos,
+        'equipamentos': equipamento_ativos,
+        'tipos_nc': tipo_nc_ativos
+    }
+    return render(request, 'qualidade/dashboard.html', context)
 
 
 @login_required(login_url='/login/')

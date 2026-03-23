@@ -50,7 +50,7 @@
         </div>
         <div class="col-md-2">
             <label class="form-label small fw-bold">Fornecedor</label>
-            <select name="fornecedor" class="form-select form-select-sm">
+            <select name="nome_fornecedor" class="form-select form-select-sm">
                 <option value="">Todas os Fornecedores</option>
                 {% for tar in lista_fornecedor %}
                     <option value="{{ tar }}" {% if filtros.fornecedor == tar %}selected{% endif %}>{{ tar }}</option>
