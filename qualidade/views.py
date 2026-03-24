@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from .models import RNC, Local, Equipamento, TipoNC
+from .models import RNC, Local, Equipamento, TipoNC, RNCImagem
 from .service import RNCService
 
 User = get_user_model()
@@ -154,4 +154,40 @@ def api_criar_rnc(request):
         return JsonResponse({'status': 'sucesso', 'rnc_id': nova_rnc.id})
 
     except Exception as e:
+        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
+
+
+@login_required(login_url='/login/')
+@require_POST
+def api_editar_rnc_avancado(request, rnc_id):
+    try:
+        rnc = RNC.objects.get(id=rnc_id)
+
+        data_encerramento = request.POST.get('data_encerramento')
+        if data_encerramento:
+            rnc.data_encerramento = data_encerramento
+
+        ishikawa_link = request.POST.get('ishikawa_link')
+        if ishikawa_link is not None:
+            rnc.ishikawa_link = ishikawa_link
+
+        responsaveis_ids = request.POST.getlist('responsaveis')
+        if responsaveis_ids:
+            rnc.responsaveis.set(responsaveis_ids)
+        else:
+            rnc.responsaveis.clear()
+
+        if 'eficacia_pdf' in request.FILES:
+            rnc.eficacia_pdf = request.FILES['eficacia_pdf']
+
+        rnc.save()
+
+        imagens = request.FILES.getlist('imagens')
+        for img in imagens:
+            RNCImagem.objects.create(rnc=rnc, imagem=img)
+
+        return JsonResponse({'status': 'sucesso'})
+
+    except Exception as e:
+        print(f"ERRO NA EDIÇÃO AVANÇADA: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)

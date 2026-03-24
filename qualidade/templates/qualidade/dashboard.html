@@ -180,9 +180,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="button" class="btn btn-warning fw-bold" id="btnSalvarEdicaoRNC" disabled>
-                        <i class="bi bi-save me-1"></i> Em construção...
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold" id="btnSalvarEdicaoRNC">
+                        <i class="bi bi-save me-1"></i> Salvar Alterações
                     </button>
                 </div>
             </form>
@@ -416,5 +416,51 @@ document.addEventListener('DOMContentLoaded', function() {
         var modalEditar = new bootstrap.Modal(document.getElementById('modalEditarRNC'));
         modalEditar.show();
     };
+
+    document.getElementById("formEditarRNC").addEventListener("submit", function(event){
+        event.preventDefault();
+
+        let formData = new FormData(this); // Captura TUDO, incluindo Ficheiros!
+        let rnc_id = document.getElementById('edit_rnc_id').value;
+        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        let btnSalvar = document.getElementById("btnSalvarEdicaoRNC");
+        let textoOriginal = btnSalvar.innerHTML;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+        btnSalvar.disabled = true;
+
+        // Montar a URL dinamicamente com o ID da RNC
+        let url = `/qualidade/api/rncs/${rnc_id}/editar-avancado/`;
+
+        fetch(url, {
+            method: 'POST',
+            // ATENÇÃO: NÃO colocamos o 'Content-Type' aqui. O navegador faz isso sozinho com o FormData!
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'sucesso'){
+                var modalEl = document.getElementById('modalEditarRNC');
+                var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                modalInstance.hide();
+                document.getElementById('formEditarRNC').reset();
+                table.setData(); // Atualiza a tabela!
+            } else {
+                alert("O SERVIDOR RECUSOU A EDIÇÃO:\n" + data.mensagem);
+            }
+        })
+        .catch(error => {
+            console.error("Erro:", error);
+            alert("Erro de conexão. Verifique o console.");
+        })
+        .finally(() => {
+            btnSalvar.innerHTML = textoOriginal;
+            btnSalvar.disabled = false;
+        });
+    });
+
 </script>
 {% endblock %}
