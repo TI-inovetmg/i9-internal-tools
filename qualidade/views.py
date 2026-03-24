@@ -151,6 +151,9 @@ def api_criar_rnc(request):
             status = 'PR'
         )
 
+        notifica_user = RNCService._notificar_data_encerramento(request, nova_rnc)
+        return JsonResponse({'status': 'sucesso'})
+
         return JsonResponse({'status': 'sucesso', 'rnc_id': nova_rnc.id})
 
     except Exception as e:
