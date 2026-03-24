@@ -1,4 +1,5 @@
 import json
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
@@ -6,16 +7,21 @@ from django.http import JsonResponse
 from .models import RNC, Local, Equipamento, TipoNC
 from .service import RNCService
 
+User = get_user_model()
+
 @login_required(login_url='/login/')
 def dashboard_qualidade(request):
     locais_ativos = Local.objects.filter(ativo= True)
     equipamento_ativos = Equipamento.objects.filter(ativo= True)
     tipo_nc_ativos = TipoNC.objects.filter(ativo= True)
 
+    usuarios_ativos = User.objects.filter(is_active=True).order_by('first_name')
+
     context = {
         'locais': locais_ativos,
         'equipamentos': equipamento_ativos,
-        'tipos_nc': tipo_nc_ativos
+        'tipos_nc': tipo_nc_ativos,
+        'usuarioe': usuarios_ativos
     }
     return render(request, 'qualidade/dashboard.html', context)
 
@@ -50,6 +56,7 @@ def api_listar_rncs(request):
             'local': rnc.local.nome if rnc.local else '-',
             'tipo_nc': rnc.tipo_nc.nome if rnc.tipo_nc else '-',
             'responsaveis': nomes_responsaveis,
+            'responsaveis_ids': [resp.id for resp in rnc.responsaveis.all()],
             'data_prevista_conclusao': rnc.data_prevista_conclusao.strftime('%Y/%m/%d') if rnc.data_prevista_conclusao else '',
             'data_encerramento': rnc.data_encerramento.strftime('%Y/%m/%d') if rnc.data_encerramento else '',
             'justificativa_criticidade': rnc.justificativa_criticidade or '',

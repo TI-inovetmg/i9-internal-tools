@@ -131,6 +131,65 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalEditarRNC" tabindex="-1" aria-labelledby="modalEditarRNCLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="modalEditarRNCLabel"><i class="bi bi-pencil-square me-2"></i>Painel de Edição - RNC #<span id="display_rnc_id"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formEditarRNC" enctype="multipart/form-data">
+                <div class="modal-body bg-light">
+                    <input type="hidden" id="edit_rnc_id" name="rnc_id">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Data de Encerramento</label>
+                            <input type="date" id="edit_data_encerramento" name="data_encerramento" class="form-control shadow-sm">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Diagrama de Ishikawa (Link URL)</label>
+                            <input type="url" id="edit_ishikawa_link" name="ishikawa_link" class="form-control shadow-sm" placeholder="https://...">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-primary">Responsáveis pela RNC</label>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -5px; margin-bottom: 5px;">Segure a tecla CTRL para selecionar várias pessoas.</p>
+                            <select multiple id="edit_responsaveis" name="responsaveis" class="form-select shadow-sm" style="min-height: 120px;">
+                                {% for user in usuarios %}
+                                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <hr class="mt-4">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-danger"><i class="bi bi-file-pdf"></i> PDF de Eficácia</label>
+                            <input type="file" id="edit_eficacia_pdf" name="eficacia_pdf" class="form-control shadow-sm" accept=".pdf">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-success"><i class="bi bi-images"></i> Anexar Imagens</label>
+                            <input type="file" id="edit_imagens" name="imagens" class="form-control shadow-sm" accept="image/*" multiple>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-warning fw-bold" id="btnSalvarEdicaoRNC" disabled>
+                        <i class="bi bi-save me-1"></i> Em construção...
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -335,5 +394,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+    window.abrirModalEdicao = function(dados) {
+        // 1. Preenche o ID no título e no campo oculto
+        document.getElementById('display_rnc_id').innerText = dados.id;
+        document.getElementById('edit_rnc_id').value = dados.id;
+
+        // 2. Preenche a Data e o Link
+        document.getElementById('edit_data_encerramento').value = dados.data_encerramento || '';
+        document.getElementById('edit_ishikawa_link').value = dados.ishikawa_link || '';
+
+        // 3. A Magia do Multi-Select: Marca os responsáveis que já estão na RNC!
+        let selectResp = document.getElementById('edit_responsaveis');
+        let idsResponsaveis = dados.responsaveis_ids || []; // Puxa os IDs numéricos que adicionámos no views.py
+
+        Array.from(selectResp.options).forEach(opt => {
+            // Se o ID da opção (opt.value) estiver na lista de responsáveis da RNC, marca como 'selected'
+            opt.selected = idsResponsaveis.includes(parseInt(opt.value));
+        });
+
+        // 4. Mostra o Modal na tela!
+        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditarRNC'));
+        modalEditar.show();
+    };
 </script>
 {% endblock %}
