@@ -271,16 +271,24 @@
     document.getElementById("download-xlsx").addEventListener("click", function(){
         table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
     });
-});
 
-    //Interceptação do submit
+    // Interceptação do submit
     document.getElementById("formNovaRNC").addEventListener("submit", function(event){
+
+        // 1. Impede o recarregamento da página
         event.preventDefault();
+
+        // 2. Captura os dados do formulário
         let formData = new FormData(this);
+
+        // 3. Converte para objeto JSON limpo
         let payload = Object.fromEntries(formData.entries());
-        console.log(DADOS PRONTOS PARA O BACEND: payload);
 
+        // 4. Imprime no console (COM ASPAS CORRETAS)
+        console.log("DADOS PRONTOS PARA O BACKEND:", payload);
 
+    }); // FECHAMENTO CORRETO DO EVENT LISTENER DO FORMULÁRIO
 
+});
 </script>
 {% endblock %}
