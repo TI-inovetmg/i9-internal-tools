@@ -276,20 +276,59 @@ document.addEventListener('DOMContentLoaded', function() {
         table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
     });
 
+    // Modal
     document.getElementById("formNovaRNC").addEventListener("submit", function(event){
-        // 1. Impede a página de recarregar
         event.preventDefault();
 
-        // 2. Coleta os dados do formulário
         let formData = new FormData(this);
-
-        // 3. Converte para um objeto JSON
         let payload = Object.fromEntries(formData.entries());
 
-        // 4. Imprime no console do navegador para testarmos!
-        console.log("DADOS PRONTOS PARA O BACKEND:", payload);
+        // Pega o token de segurança para enviar pro Django
+        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Muda o botão para "Salvando..." para dar feedback ao usuário
+        let btnSalvar = document.getElementById("btnSalvarNovaRNC");
+        let textoOriginal = btnSalvar.innerHTML;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+        btnSalvar.disabled = true;
+
+        // Dispara o POST para a nossa nova URL do Django
+        fetch("{% url 'api_criar_rnc' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'sucesso'){
+                // 1. Fecha o Modal do Bootstrap
+                var modalEl = document.getElementById('modalNovaRNC');
+                var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                modalInstance.hide();
+
+                // 2. Limpa o formulário para a próxima vez
+                document.getElementById('formNovaRNC').reset();
+
+                // 3. A MAGIA: Manda o Tabulator buscar os dados atualizados no banco!
+                table.setData();
+
+            } else {
+                alert("Erro ao criar RNC: " + data.mensagem);
+            }
+        })
+        .catch(error => {
+            console.error("Erro na requisição:", error);
+            alert("Erro de conexão com o servidor.");
+        })
+        .finally(() => {
+            // Volta o botão ao normal independente se deu certo ou errado
+            btnSalvar.innerHTML = textoOriginal;
+            btnSalvar.disabled = false;
+        });
     });
 
-});
 </script>
 {% endblock %}

@@ -114,3 +114,37 @@ def api_atualizar_rnc(request, rnc_id):
 
     except Exception as e:
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
+
+
+@login_required('/login/')
+@require_POST
+def api_criar_rnc(request):
+    try:
+        dados = json.loads(request.body)
+
+        local = Local.objects.get(id=dados.get('local_id'))
+        tipo_nc = TipoNC.objects.get(id=dados.get('tipo_nc_id'))
+
+        equipamento_id = dados.get('equipamento_id')
+        equipamento = Equipamento.objects.get(id=equipamento_id) if equipamento_id else None
+
+        mapa_classificacao = {'Sistema': 'SI', 'Produto': 'PR', 'Processo': 'PO'}
+        mapa_criticidade = {'Alto': 'A', 'Médio': 'M', 'Baixo': 'B'}
+        mapa_detector = {'Cliente': 'CL', 'Interno': 'IN', 'Auditor Interno': 'AI', 'Auditor Externo': 'AE', 'Fornecedor': 'FO'}
+
+        nova_rnc = RNC.objects.create(
+            registrador=request.user,
+            local=local,
+            tipo_nc=tipo_nc,
+            equipamento=equipamento,
+            detector=mapa_detector.get(dados.get('detector')),
+            classificacao=mapa_classificacao.get(dados.get('classificacao')),
+            criticidade=mapa_criticidade.get(dados.get('criticidade')),
+            descricao=dados.get('descricao'),
+            status = 'PR'
+        )
+
+        return JsonResponse({'status': 'sucesso', 'rnc_id': nova_rnc.id})
+
+    except Exception as e:
+        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
