@@ -20,11 +20,9 @@
                 <i class="bi bi-printer-fill me-1"></i> PDF
             </button>
 
-            {% if user == sto.consultor or user.username|lower == 'laura' or user.username|lower == 'gustavo' or user.is_superuser %}
             <a href="{% url 'editar_sto' sto.id %}" class="btn text-white fw-bold shadow-sm" style="background-color: var(--laranja-principal);">
                 <i class="bi bi-pencil-square me-1"></i> Editar
             </a>
-            {% endif %}
         </div>
     </div>
 

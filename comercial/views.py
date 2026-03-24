@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from datetime import date
-from .forms import STOForm
+from .forms import STOForm, VersaoFormularioSTOForm
 from .models import STO, STOImagem, STORevisao, VersaoFormularioSTO
 
 
@@ -20,15 +20,7 @@ def criar_sto(request):
             sto = form.save(commit=False)
             sto.consultor = request.user
 
-            hoje = date.today()
-            versao_ativa = VersaoFormularioSTO.objects.filter(
-                data_inicio__lte=hoje
-            ).exclude(data_fim__lt=hoje).first()
-
-            if versao_ativa:
-                sto.versao_formulario = versao_ativa.versao
-            else:
-                sto.versao_formulario = "Versão Padrão (Sem Registro de Vigência)"
+            sto.versao_formulario = VersaoFormularioSTO.obter_versao_ativa_ou_padrao()
 
             sto.save()
 
@@ -64,7 +56,7 @@ def exportar_stos_csv(request):
     writer = csv.writer(response, delimiter=';')
 
     writer.writerow([
-        'ID', 'Data', 'Consultor', 'Cliente', 'Contato', 'Cidade',
+        'ID', 'Código STO', 'Data', 'Consultor', 'Cliente', 'Contato', 'Cidade',
         'Atividade', 'Capacidade (T/h)', 'Produto'
     ])
 
@@ -72,6 +64,7 @@ def exportar_stos_csv(request):
     for sto in stos:
         writer.writerow([
             sto.id,
+            sto.codigo,
             sto.data.strftime('%d/%m/%Y'),
             sto.consultor.get_full_name() or sto.consultor.username,
             sto.cliente,
@@ -103,11 +96,6 @@ def editar_sto(request, pk):
 
     sto = get_object_or_404(STO, pk=pk)
 
-    usuarios_privilegiados = ['laura', 'gustavo']
-    if request.user != sto.consultor and request.user.username.lower() not in usuarios_privilegiados and not request.user.is_superuser:
-        messages.error(request, "Você não tem permissão para editar a STO de outro consultor.")
-        return redirect('ver_sto', pk=sto.id)
-
     if request.method == 'POST':
         form = STOForm(request.POST, request.FILES, instance=sto)
         if form.is_valid():
@@ -137,12 +125,26 @@ def editar_sto(request, pk):
     return render(request, 'comercial/sto_form.html', {'form': form, 'sto': sto})
 
 
-# --- NOVA VIEW PARA A TELA DE VERSÕES DA ISO 9001 ---
 @login_required(login_url='/admin/login/')
 def historico_versoes_iso(request):
     if not request.user.pode_acessar_modulo('comercial'):
         messages.error(request, "Acesso negado.")
         return redirect('home')
 
+    if request.method == 'POST':
+        form = VersaoFormularioSTOForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Nova versão da ISO ativada com sucesso!')
+            return redirect('historico_versoes_iso')
+    else:
+        form = VersaoFormularioSTOForm()
+
     versoes = VersaoFormularioSTO.objects.all().order_by('-data_inicio')
-    return render(request, 'comercial/iso_versoes.html', {'versoes': versoes})
+
+    context = {
+        'versoes': versoes,
+        'form': form
+    }
+
+    return render(request, 'comercial/iso_versoes.html', context)

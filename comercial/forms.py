@@ -1,5 +1,5 @@
 from django import forms
-from .models import STO
+from .models import STO, VersaoFormularioSTO
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -19,6 +19,15 @@ class MultipleFileField(forms.FileField):
 
 
 class STOForm(forms.ModelForm):
+    codigo = forms.CharField(
+        max_length=50,
+        required=False,
+        label="Código da STO",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ex: STO-2026-001'
+        })
+    )
     imagens = MultipleFileField(
         required=False,
         label="Anexar Fotos do Local / Equipamento"
@@ -42,7 +51,7 @@ class STOForm(forms.ModelForm):
     class Meta:
         model = STO
         fields = [
-            'cliente', 'contato', 'cidade', 'email', 'atividade',
+            'cliente', 'codigo', 'contato', 'cidade', 'email', 'atividade',
             'orc_obras', 'orc_engenharia', 'orc_equipamentos', 'orc_locacoes', 'orc_manutencoes', 'orc_outros',
             'local_atividade', 'data_prevista', 'produto', 'capacidade_fabrica', 'densidade', 'granulometria',
             'umidade',
@@ -72,3 +81,13 @@ class STOForm(forms.ModelForm):
                 self.add_error('motivo_alteracao', 'Descreva o que foi alterado para o histórico.')
 
         return cleaned_data
+
+
+class VersaoFormularioSTOForm(forms.ModelForm):
+    class Meta:
+        model = VersaoFormularioSTO
+        fields = ['versao', 'data_inicio']
+        widgets = {
+            'versao': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Versão 4'}),
+            'data_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+        }

@@ -1,5 +1,7 @@
+from dateutil.utils import today
 from django.db import models
 from django.conf import settings
+from datetime import date, timedelta
 
 
 class STO(models.Model):
@@ -25,7 +27,7 @@ class STO(models.Model):
     cidade = models.CharField(max_length=150)
     contato = models.CharField(max_length=150, verbose_name="Contato (Nome/Telefone)")
     atividade = models.CharField(max_length=150)
-    codigo = models.CharField(max_length=50, blank=True, null=True, verbose_name="Código da STO")
+    codigo = models.CharField(max_length=50, blank=True, null=True, verbose_name="Código da STO", unique= True)
     data = models.DateField(auto_now_add=True)
     email = models.EmailField()
 
@@ -85,7 +87,7 @@ class STO(models.Model):
     risco_fabril = models.BooleanField(default=False, verbose_name="Fabril e Capacidade de Produção")
     risco_qualidade = models.BooleanField(default=False, verbose_name="Qualidade")
     risco_requisitos_legais = models.BooleanField(default=False, verbose_name="Requisitos Legais e Estatutários")
-    risco_outros = models.CharField(max_length=200, blank=False, null=True, verbose_name="Outros Riscos, Qual?")
+    risco_outros = models.CharField(max_length=200, blank=True, null=True, verbose_name="Outros Riscos, Qual?")
 
     mkt_indicacao = models.BooleanField(default=False, verbose_name="Indicação")
     mkt_linkedin = models.BooleanField(default=False, verbose_name="LinkedIn")
@@ -129,3 +131,24 @@ class VersaoFormularioSTO(models.Model):
 
     def __str__(self):
         return self.versao
+
+    @classmethod
+    def obter_versao_ativa_ou_padrao(cls):
+        """Retorna a string da versao ativa baseada na data atual"""
+        hoje = date.today()
+        versao_ativa = cls.objects.filter(
+            data_inicio__lte=hoje
+        ).exclude(data_fim__lt=hoje).first()
+        if versao_ativa:
+            return versao_ativa.versao
+        return "Versão Padrão (Sem Registro de Vigência)"
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            versao_atual = VersaoFormularioSTO.objects.filter(data_fim__isnull=True).first()
+            if versao_atual:
+                versao_atual.data_fim = self.data_inicio - timedelta(days=1)
+                versao_atual.save()
+        super().save(*args, **kwargs)
+
+

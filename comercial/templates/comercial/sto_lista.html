@@ -30,6 +30,7 @@
                     <thead class="bg-light" style="border-bottom: 2px solid #dee2e6;">
                         <tr>
                             <th class="px-4 py-3 text-secondary">ID</th>
+                            <th class="py-3 text-secondary">Codigo STO</th>
                             <th class="py-3 text-secondary">Data</th>
                             <th class="py-3 text-secondary">Consultor</th>
                             <th class="py-3 text-secondary">Cliente</th>
@@ -42,6 +43,7 @@
                         {% for sto in stos %}
                         <tr>
                             <td class="px-4 fw-bold text-dark">#{{ sto.id }}</td>
+                            <td>{{ sto.codigo|default:"-" }}</td>
                             <td>{{ sto.data|date:"d/m/Y" }}</td>
                             <td>
                                 <span class="badge bg-secondary rounded-pill fw-normal">
