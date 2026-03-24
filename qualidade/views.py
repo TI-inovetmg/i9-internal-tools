@@ -116,7 +116,7 @@ def api_atualizar_rnc(request, rnc_id):
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
 
 
-@login_required('/login/')
+@login_required(login_url='/login/')
 @require_POST
 def api_criar_rnc(request):
     try:
