@@ -70,6 +70,7 @@ def api_listar_rncs(request):
             'eficacia_pdf': rnc.eficacia_pdf.url if rnc.eficacia_pdf else '',
             'qtd_imagens': len(imagens_urls),
             'primeira_imagem_url': imagens_urls[0] if imagens_urls else '',
+            'imagens_urls': imagens_urls
         })
 
     return JsonResponse(data, safe=False)
