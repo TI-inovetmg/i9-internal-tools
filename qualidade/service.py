@@ -21,7 +21,7 @@ class RNCService:
 
             # tratamento especial para status
             mapa_status = {
-                'Não iniciada': 'NI', 'Em andamento': 'EA', 'Concluido': 'CO', 'Fora dos trilhos': 'FT', 'Registro preliminar': 'PR', 'Cancelado': 'CA'
+                'Não iniciada': 'NI', 'Em andamento': 'EA', 'Concluído': 'CO', 'Fora dos trilhos': 'FT', 'Registro preliminar': 'PR', 'Cancelado': 'CA'
             }
             if campo =='status' and valor in mapa_status:
                 valor = mapa_status[valor]

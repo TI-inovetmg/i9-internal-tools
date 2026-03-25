@@ -11,10 +11,32 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
+    /* Estilo Base da Tabela */
     .tabulator { border: none !important; border-radius: 8px; }
     .tabulator-header { background-color: #f8f9fa !important; color: #495057 !important; font-weight: 600; }
     .tabulator-row:nth-child(even) { background-color: #fcfcfc !important; }
     .tabulator-row:hover { background-color: #f1f3f5 !important; }
+
+    /* ========================================================== */
+    /* DESTAQUE PARA CABEÇALHOS EDITÁVEIS (INLINE)       */
+    /* ========================================================== */
+    .tabulator-header .tabulator-col[tabulator-field="status"],
+    .tabulator-header .tabulator-col[tabulator-field="detector"],
+    .tabulator-header .tabulator-col[tabulator-field="projeto_cod"],
+    .tabulator-header .tabulator-col[tabulator-field="elemento_rastreador"],
+    .tabulator-header .tabulator-col[tabulator-field="classificacao"],
+    .tabulator-header .tabulator-col[tabulator-field="criticidade"],
+    .tabulator-header .tabulator-col[tabulator-field="justificativa_criticidade"],
+    .tabulator-header .tabulator-col[tabulator-field="descricao"],
+    .tabulator-header .tabulator-col[tabulator-field="correcao"],
+    .tabulator-header .tabulator-col[tabulator-field="causas_principais"],
+    .tabulator-header .tabulator-col[tabulator-field="acao_corretiva"],
+    .tabulator-header .tabulator-col[tabulator-field="eficacia_texto"] {
+        background-color: #e0f2fe !important; /* Azul muito clarinho */
+        color: #0284c7 !important; /* Texto em azul destaque */
+        border-bottom: 3px solid #38bdf8 !important; /* Linha azul grossa embaixo */
+        cursor: text !important; /* Muda o mouse para indicar edição */
+    }
 </style>
 
 <div class="container-fluid p-0">
