@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from .models import RNC, Local, Equipamento, TipoNC, RNCImagem, RNCEficaciaImagem
+from .models import RNC, Local, Equipamento, RNCImagem, RNCEficaciaImagem
 from .service import RNCService
 
 User = get_user_model()
@@ -13,15 +13,13 @@ User = get_user_model()
 @login_required(login_url='/login/')
 def dashboard_qualidade(request):
     locais_ativos = Local.objects.filter(ativo= True)
-    equipamento_ativos = Equipamento.objects.filter(ativo= True)
-    tipo_nc_ativos = TipoNC.objects.filter(ativo= True)
+    equipamento_ativos = Equipamento.objects.filter(ativo= True),
 
     usuarios_ativos = User.objects.filter(is_active=True).order_by('first_name')
 
     context = {
         'locais': locais_ativos,
         'equipamentos': equipamento_ativos,
-        'tipos_nc': tipo_nc_ativos,
         'usuarios': usuarios_ativos
     }
     return render(request, 'qualidade/dashboard.html', context)
@@ -33,7 +31,7 @@ def api_listar_rncs(request):
     Retorna a lista completa de RNCs em formato JSON, incluindo textos e mídias.
     """
     rncs = RNC.objects.select_related(
-        'registrador', 'equipamento', 'local', 'tipo_nc'
+        'registrador', 'equipamento', 'local'
     ).prefetch_related(
         'responsaveis', 'imagens', 'eficacia_imagens'
     ).all().order_by('-id')
@@ -51,17 +49,15 @@ def api_listar_rncs(request):
             'projeto_cod': rnc.projeto_cod or '-',
             'elemento_rastreador': rnc.elemento_rastreador or '-',
             'detector': rnc.get_detector_display(),
-            'classificacao': rnc.get_classificacao_display(),
+            'categoria': rnc.get_categoria_display(),
             'criticidade': rnc.get_criticidade_display(),
             'status': rnc.get_status_display(),
             'equipamento': rnc.equipamento.nome if rnc.equipamento else 'N/A',
             'local': rnc.local.nome if rnc.local else '-',
-            'tipo_nc': rnc.tipo_nc.nome if rnc.tipo_nc else '-',
             'responsaveis': nomes_responsaveis,
             'responsaveis_ids': [resp.id for resp in rnc.responsaveis.all()],
             'data_prevista_conclusao': rnc.data_prevista_conclusao.strftime('%Y/%m/%d') if rnc.data_prevista_conclusao else '',
             'data_encerramento': rnc.data_encerramento.strftime('%Y/%m/%d') if rnc.data_encerramento else '',
-            'justificativa_criticidade': rnc.justificativa_criticidade or '',
             'descricao': rnc.descricao or '',
             'correcao': rnc.correcao or '',
             'ishikawa_link': rnc.ishikawa_link or '',
@@ -92,13 +88,11 @@ def api_atualizar_rnc(request, rnc_id):
             'projeto_cod',
             'elemento_rastreador',
             'detector',
-            'classificacao',
+            'categoria',
             'criticidade',
-            'justificativa_criticidade',
             'status',
             'equipamento',
             'local',
-            'tipo_nc',
             'descricao',
             'correcao',
             'ishikawa_link',
@@ -137,22 +131,20 @@ def api_criar_rnc(request):
         dados = json.loads(request.body)
 
         local = Local.objects.get(id=dados.get('local_id'))
-        tipo_nc = TipoNC.objects.get(id=dados.get('tipo_nc_id'))
 
         equipamento_id = dados.get('equipamento_id')
         equipamento = Equipamento.objects.get(id=equipamento_id) if equipamento_id else None
 
-        mapa_classificacao = {'Sistema': 'SI', 'Produto': 'PR', 'Processo': 'PO'}
+        mapa_categoria = {'Comercial': 'CO', 'Engenharia': 'EN', 'PCP': 'PC', 'Fabricação': 'FA', 'Montagem': 'MO', 'Suprimentos': 'SU', 'Fornecedor': 'FO', 'Expedição': 'EX', 'Qualidade': 'QU', 'Recursos Humanos': 'RH', 'Financeiro': 'FI', 'SGQ': 'SG'}
         mapa_criticidade = {'Alto': 'A', 'Médio': 'M', 'Baixo': 'B'}
         mapa_detector = {'Cliente': 'CL', 'Interno': 'IN', 'Auditor Interno': 'AI', 'Auditor Externo': 'AE', 'Fornecedor': 'FO'}
 
         nova_rnc = RNC.objects.create(
             registrador=request.user,
             local=local,
-            tipo_nc=tipo_nc,
             equipamento=equipamento,
             detector=mapa_detector.get(dados.get('detector')),
-            classificacao=mapa_classificacao.get(dados.get('classificacao')),
+            categoria=mapa_categoria.get(dados.get('categoria')),
             criticidade=mapa_criticidade.get(dados.get('criticidade')),
             descricao=dados.get('descricao'),
             status = 'PR'

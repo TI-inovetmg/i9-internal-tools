@@ -32,9 +32,9 @@ class RNCService:
             if campo =='detector' and valor in mapa_detector:
                 valor = mapa_detector[valor]
 
-            mapa_classificacao = {'Sistema': 'SI', 'Produto': 'PR', 'Processo': 'PO'}
-            if campo =='classificacao' and valor in mapa_classificacao:
-                valor = mapa_classificacao[valor]
+            mapa_categoria = {'Comercial': 'CO', 'Engenharia': 'EN', 'PCP': 'PC', 'Fabricação': 'FA', 'Montagem': 'MO', 'Suprimentos': 'SU', 'Fornecedor': 'FO', 'Expedição': 'EX', 'Qualidade': 'QL', 'Recursos Humanos': 'RH', 'Financeiro': 'FI', 'SGQ': 'SG'}
+            if campo =='categoria' and valor in mapa_categoria:
+                valor = mapa_categoria[valor]
 
             mapa_criticidade = {'Alto': 'A', 'Médio': 'M', 'Baixo': 'B'}
             if campo == 'criticidade' and valor in mapa_criticidade:

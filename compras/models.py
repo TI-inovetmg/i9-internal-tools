@@ -45,3 +45,11 @@ class DataWarehouseCompras(models.Model):
 
     def __str__(self):
         return f"SC: {self.num_sc} | Pedido: {self.num_pedido} | Valor: R$ {self.valor_total}"
+    
+
+"""class AvaliacaoFornecedor(models.Model):
+    usuario_avaliador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                    related_name='avaliacoes_fornecedor')
+    fornecedor_avaliado = models.CharField(max_length=255, choices=DataWarehouseCompras.objects.all().values_list('nome_fornecedor', flat=True).distinct())"""
+
+    

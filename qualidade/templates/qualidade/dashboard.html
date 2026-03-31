@@ -17,16 +17,15 @@
     .tabulator-row:nth-child(even) { background-color: #fcfcfc !important; }
     .tabulator-row:hover { background-color: #f1f3f5 !important; }
 
-    /* ========================================================== */
+
     /* DESTAQUE PARA CABEÇALHOS EDITÁVEIS (INLINE)       */
-    /* ========================================================== */
+
     .tabulator-header .tabulator-col[tabulator-field="status"],
     .tabulator-header .tabulator-col[tabulator-field="detector"],
     .tabulator-header .tabulator-col[tabulator-field="projeto_cod"],
     .tabulator-header .tabulator-col[tabulator-field="elemento_rastreador"],
-    .tabulator-header .tabulator-col[tabulator-field="classificacao"],
+    .tabulator-header .tabulator-col[tabulator-field="categoria"],
     .tabulator-header .tabulator-col[tabulator-field="criticidade"],
-    .tabulator-header .tabulator-col[tabulator-field="justificativa_criticidade"],
     .tabulator-header .tabulator-col[tabulator-field="descricao"],
     .tabulator-header .tabulator-col[tabulator-field="correcao"],
     .tabulator-header .tabulator-col[tabulator-field="causas_principais"],
@@ -88,15 +87,6 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Tipo de NC *</label>
-                            <select name="tipo_nc_id" class="form-select shadow-sm" required>
-                                <option value="">Selecione...</option>
-                                {% for tipo in tipos_nc %}
-                                    <option value="{{ tipo.id }}">{{ tipo.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
                             <label class="form-label fw-bold small">Equipamento (Opcional)</label>
                             <select name="equipamento_id" class="form-select shadow-sm">
                                 <option value="">Nenhum / Não se aplica</option>
@@ -118,12 +108,21 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Classificação *</label>
-                            <select name="classificacao" class="form-select shadow-sm" required>
+                            <label class="form-label fw-bold small">Categoria da Não Conformidade *</label>
+                            <select name="categoria" class="form-select shadow-sm" required>
                                 <option value="">Selecione...</option>
-                                <option value="Sistema">Sistema</option>
-                                <option value="Produto">Produto</option>
-                                <option value="Processo">Processo</option>
+                                <option value="Comercial">Comercial</option>
+                                <option value="Engenharia">Engenharia</option>
+                                <option value="PCP">PCP</option>
+                                <option value="Fabricação">Fabricação</option>
+                                <option value="Montagem">Montagem / Comissionamento</option>
+                                <option value="Suprimentos">Suprimentos</option>
+                                <option value="Fornecedor">Fornecedor externo</option>
+                                <option value="Expedição">Recebimento / Expedição </option>
+                                <option value="Qualidade">Qualidade</option>
+                                <option value="Recursos Humanos">RH (Competência / Treinamento)</option>
+                                <option value="Financeiro">Financeiro</option>
+                                <option value="SGQ">SGQ  (procedimentos, padronização, definição de fluxo)</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -292,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }},
 
             {title: "ID", field: "id", width: 70, headerFilter: "input", headerFilterFunc: filtroMultiploExato, frozen: false},
-            {title: "Status", field: "status", width: 140,
+            {title: "STATUS", field: "status", width: 140,
              headerFilter: "list",
              headerFilterFunc: "in",
              headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true}, // <-- NOVO: multiselect:true
@@ -333,20 +332,19 @@ document.addEventListener('DOMContentLoaded', function() {
                  return termos.some(termo => valorCelula.includes(termo));
              }
             },
-            {title: "Elemento Rastreador", field: "elemento_rastreador", width: 130, headerFilter: "input", editor: "input"},
-            {title: "Local", field: "local", width: 130, headerFilter: "input", headerFilterFunc: filtroMultiploTexto},
             {title: "Equipamento", field: "equipamento", width: 160, headerFilter: "input", headerFilterFunc: filtroMultiploTexto},
-            {title: "Classificação", field: "classificacao", width: 130,
+            {title: "Elemento Rastreador", field: "elemento_rastreador", width: 130, headerFilter: "input", editor: "input"},
+            {title: "Local Detecção", field: "local", width: 130, headerFilter: "input", headerFilterFunc: filtroMultiploTexto},
+            {title: "Categoria da Não Conformidade", field: "categoria", width: 130,
             headerFilter: "list",
             headerFilterFunc: "in",
             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-            editor: "list", editorParams: {values: ["Sistema", "Produto", "Processo"]}},
+            editor: "list", editorParams: {values: ["Comercial", "Engenharia", "PCP", "Fabricação", "Montagem", "Suprimentos", "Fornecedor", "Expedição", "Qualidade", "Recursos Humanos", "Financeiro", "SGQ"]}},
             {title: "Criticidade", field: "criticidade", width: 110,
             headerFilter: "list",
             headerFilterFunc: "in",
             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
             editor: "list", editorParams: {values: ["Alto", "Médio", "Baixo"]}},
-            {title: "Justificativa Criticidade", field: "justificativa_criticidade", width: 250, formatter: "textarea", editor: "textarea"},
             {title: "Imagem NC", field: "qtd_imagens", width: 90, hozAlign: "center", formatter: function(cell){
                 let qtd = cell.getValue();
                 if(qtd > 0) {
@@ -361,17 +359,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     abrirGaleriaImagens(dados, 'padrao'); // <-- Passa 'padrao'
                 }
             }},
-            {title: "Tipo NC", field: "tipo_nc", width: 150, 
-            headerFilter: "input",
-            headerFilterFunc: filtroMultiploTexto},
-            {title: "Descrição da NC", field: "descricao", width: 300, formatter: "textarea", editor: "textarea"},
+            {title: "Descrição da não conformidade", field: "descricao", width: 300, formatter: "textarea", editor: "textarea"},
             {title: "Correção Imediata", field: "correcao", width: 250, formatter: "textarea", editor: "textarea"},
             {title: "Causas Principais", field: "causas_principais", width: 250, formatter: "textarea", editor: "textarea"},
             {title: "Ação Corretiva", field: "acao_corretiva", width: 250, formatter: "textarea", editor: "textarea"},
             {title: "Eficácia (Texto)", field: "eficacia_texto", width: 250, formatter: "textarea", editor: "textarea"},
-            {title: "Responsáveis", field: "responsaveis", width: 200, headerFilter: "input", headerFilterFunc: filtroMultiploTexto},
-            {title: "Data Previsão de Conclusão", field: "data_prevista_conclusao", width: 130, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
-            {title: "Data de Encerramento", field: "data_encerramento", width: 130, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
+            {title: "Responsavel", field: "responsaveis", width: 200, headerFilter: "input", headerFilterFunc: filtroMultiploTexto},
+            {title: "Data Previsão Conclusão", field: "data_prevista_conclusao", width: 130, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
+            {title: "Data Encerramento", field: "data_encerramento", width: 130, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
 
             {title: "Ishikawa", field: "ishikawa_link", width: 100, formatter: function(cell){
                 let url = cell.getValue();
@@ -398,20 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }},
 
-            {title: "Imagem NC", field: "qtd_imagens", width: 90, hozAlign: "center", formatter: function(cell){
-                let qtd = cell.getValue();
-                if(qtd > 0) {
-                    return `<button type="button" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;">
-                                <i class="bi bi-image"></i> (${qtd})
-                            </button>`;
-                }
-                return "-";
-            }, cellClick: function(e, cell){
-                let dados = cell.getRow().getData();
-                if(dados.qtd_imagens > 0){
-                    abrirGaleriaImagens(dados, 'padrao'); // <-- Passa 'padrao'
-                }
-            }},
         ],
         locale: "pt-br",
         langs: {
@@ -419,9 +400,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ==========================================
     // EDIÇÃO INLINE DA TABELA (SALVAMENTO AUTOMÁTICO)
-    // ==========================================
+
     table.on("cellEdited", function(cell){
         let id_rnc = cell.getRow().getData().id;
         let campo_editado = cell.getField();
