@@ -1,5 +1,7 @@
 import json
 from datetime import datetime
+
+from cryptography.x509 import random_serial_number
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
@@ -154,6 +156,12 @@ def api_criar_rnc(request):
             status = 'PR'
         )
 
+        responsaveis_ids = dados.get('responsaveis', [])
+
+        if responsaveis_ids:
+            nova_rnc.responsaveis.set(responsaveis_ids)
+            RNCService.notificar_nova_rnc(nova_rnc.id, responsaveis_ids)
+
         return JsonResponse({'status': 'sucesso', 'rnc_id': nova_rnc.id})
 
     except Exception as e:
@@ -167,6 +175,7 @@ def api_editar_rnc_avancado(request, rnc_id):
         rnc = RNC.objects.get(id=rnc_id)
 
         data_antiga = rnc.data_encerramento
+        data_previsao = rnc.data_prevista_conclusao
 
         data_encerramento = request.POST.get('data_encerramento')
         if data_encerramento:
@@ -180,26 +189,32 @@ def api_editar_rnc_avancado(request, rnc_id):
         elif data_prevista == "":
             rnc.data_prevista_conclusao = None
 
-        # 3. Tratamento do Ishikawa
+        # Tratamento do Ishikawa
         ishikawa_link = request.POST.get('ishikawa_link')
         if ishikawa_link is not None:
             rnc.ishikawa_link = ishikawa_link
 
-        # 4. Tratamento dos Responsáveis
+
+        # Tratamento dos Responsáveis
         responsaveis_ids = request.POST.getlist('responsaveis')
         if responsaveis_ids:
+            ids_antigos = set(rnc.responsaveis.values_list('id', flat=True))
+            ids_novos = set(int(id) for id in responsaveis_ids)
+            ids_novatos = ids_novos - ids_antigos
             rnc.responsaveis.set(responsaveis_ids)
+            if ids_novatos:
+                RNCService.notificar_nova_rnc(rnc.id, ids_novatos)
         else:
             rnc.responsaveis.clear()
 
-        # 5. Tratamento do PDF
+        # Tratamento do PDF
         if 'eficacia_pdf' in request.FILES:
             rnc.eficacia_pdf = request.FILES['eficacia_pdf']
 
         # Salva o registo principal
         rnc.save()
 
-        # 6. Tratamento das Imagens Adicionais
+        # Tratamento das Imagens Adicionais
         imagens = request.FILES.getlist('imagens')
         for img in imagens:
             RNCImagem.objects.create(rnc=rnc, imagem=img)
@@ -208,9 +223,12 @@ def api_editar_rnc_avancado(request, rnc_id):
         for img in imagens_eficacia:
             RNCEficaciaImagem.objects.create(rnc=rnc, imagens_eficacia=img)
 
-        # 7. Gatilho do E-mail (Só dispara se a data de encerramento mudou E não for vazia)
+        # Gatilho do E-mail
         if rnc.data_encerramento and rnc.data_encerramento != data_antiga:
             RNCService._notificar_data_encerramento(rnc.id)
+
+        if rnc.data_prevista_conclusao and rnc.data_prevista_conclusao != data_previsao:
+            RNCService._notificar_data_previsao(rnc.id)
 
         return JsonResponse({'status': 'sucesso'})
 

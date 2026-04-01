@@ -3,6 +3,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import RNC
 from django.db import transaction
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class RNCService:
     @staticmethod
@@ -12,7 +15,7 @@ class RNCService:
             rnc = RNC.objects.get(id=rnc_id)
             valor_antigo = getattr(rnc, campo)
 
-            # tratamento especial para datas, se o campo for data, convertemos para string do JS
+            # tratamento especial para datas, se o campo for data, converte para string do JS
             if 'data' in campo and isinstance(valor, str) and valor != '':
                 try:
                     valor = datetime.strptime(valor, '%Y-%m-%d').date()
@@ -55,7 +58,7 @@ class RNCService:
         return rnc
 
     @staticmethod
-    def _notificar_data_encerramento(rnc_id, usuario_id):
+    def _notificar_data_encerramento(rnc_id):
         rnc = RNC.objects.get(id=rnc_id)
         emails = [resp.email for resp in rnc.responsaveis.all() if resp.email]
 
@@ -65,7 +68,7 @@ class RNCService:
 
             email_altera_data = (
                 f"Atenção, a data de encerramento da RNC foi atualizada.\n\n"
-                f"Clique aqui para acessar: https://inovetmg.pythonanywhere.com/login/ "
+                f"Clique aqui para acessar: https://inovetmg.pythonanywhere.com/login/\n\n"
                 f"DETALHES DA RNC:\n"
                 f"- ID: {rnc.id}\n"
                 f"- Equipamento: {nome_equipamento}\n"
@@ -84,3 +87,74 @@ class RNCService:
                 )
             except Exception as e:
                 print(f'Erro ao enviar email da RNC {rnc.id}: {e}')
+
+    @staticmethod
+    def _notificar_novo_responsavel(rnc_id, usuario_id):
+        # Busca RNC, user e email no banco de dados
+        rnc = RNC.objects.get(id=rnc_id)
+        usuario = User.objects.get(id=usuario_id)
+        email = usuario.email
+
+        if email:
+            # Monta email
+            nome_equipamento = rnc.equipamento.nome if rnc.equipamento else "Não informado"
+            codigo_projeto = rnc.projeto_cod if rnc.projeto_cod else "Não informado"
+
+            email_novo_resp = (
+                f"Atenção, você foi citado em uma RNC.\n\n"
+                f"Clique aqui para acessar: https://inovetmg.pythonanywhere.com/login/\n\n"
+                f"DETALHES DA RNC:\n"
+                f"- ID: {rnc.id}\n"
+                f"- Equipamento: {nome_equipamento}\n"
+                f"- Projeto: {codigo_projeto}\n"
+                f"- Descrição da Não Conformidade: {rnc.descricao}\n\n"
+            )
+            # Dispara email com send_mail
+            try:
+                send_mail(
+                    subject=f'[SGQ] Você foi citado em uma nova RNC - RNC #{rnc.id}',
+                    message=email_novo_resp,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[email],
+                    fail_silently=False
+                )
+            except Exception as e:
+                print(f'Erro ao enviar email da RNC {rnc.id}: {e}')
+
+    @staticmethod
+    def notificar_nova_rnc(rnc_id, lista_usuario_id):
+        for usuario_id in lista_usuario_id:
+            RNCService._notificar_novo_responsavel(rnc_id, usuario_id)
+
+    @staticmethod
+    def _notificar_data_previsao(rnc_id):
+        rnc = RNC.objects.get(id=rnc_id)
+        emails = [resp.email for resp in rnc.responsaveis.all() if resp.email]
+
+        if emails:
+            nome_equipamento = rnc.equipamento.nome if rnc.equipamento else "Não informado"
+            codigo_projeto = rnc.projeto_cod if rnc.projeto_cod else "Não informado"
+
+            email_altera_data = (
+                f"Atenção, a data de previsão de encerramento da RNC foi atualizada.\n\n"
+                f"Clique aqui para acessar: https://inovetmg.pythonanywhere.com/login/ \n\n"
+                f"DETALHES DA RNC:\n"
+                f"- ID: {rnc.id}\n"
+                f"- Equipamento: {nome_equipamento}\n"
+                f"- Projeto: {codigo_projeto}\n"
+                f"- Descrição da Não Conformidade: {rnc.descricao}\n\n"
+                f"Nova Data de previsão de encerramento: {rnc.data_prevista_conclusao.strftime('%d/%m/%Y') if rnc.data_prevista_conclusao else 'Não informado'}\n"
+            )
+
+            try:
+                send_mail(
+                    subject=f'[SGQ] Alteração de Prazo - RNC #{rnc.id}',
+                    message=email_altera_data,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=emails,
+                    fail_silently=False
+                )
+            except Exception as e:
+                print(f'Erro ao enviar email da RNC {rnc.id}: {e}')
+
+

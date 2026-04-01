@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import Equipamento, Local, RNC, RNCImagem
 
 
-# --- Configuração das Tabelas de Domínio ---
+# Configuração das Tabelas de Domínio
 @admin.register(Equipamento)
 class EquipamentoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'ativo')
@@ -19,7 +19,7 @@ class LocalAdmin(admin.ModelAdmin):
 
 
 
-# --- Configuração da Imagem em Linha (1:N) ---
+# Configuração da Imagem em Linha (1:N)
 class RNCImagemInline(admin.TabularInline):
     model = RNCImagem
     extra = 1
@@ -27,7 +27,7 @@ class RNCImagemInline(admin.TabularInline):
     readonly_fields = ('enviado_em',)
 
 
-# --- Configuração da Entidade Principal (RNC) ---
+# Configuração da Entidade Principal (RNC)
 @admin.register(RNC)
 class RNCAdmin(admin.ModelAdmin):
     list_display = ('id', 'projeto_cod', 'detector', 'categoria', 'criticidade', 'status', 'data_abertura')

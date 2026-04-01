@@ -150,6 +150,16 @@
                             </select>
                         </div>
 
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-bold small">Responsáveis (Opcional)</label>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -5px; margin-bottom: 5px;">Segure a tecla CTRL para selecionar várias pessoas.</p>
+                            <select multiple name="responsaveis" class="form-select shadow-sm" style="min-height: 100px;">
+                                {% for user in usuarios %}
+                                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
                         <div class="col-12">
                             <label class="form-label fw-bold small">Descrição da Não Conformidade *</label>
                             <textarea name="descricao" class="form-control shadow-sm" rows="4" required placeholder="Descreva o problema de forma clara e objetiva..."></textarea>
@@ -307,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
             {title: "STATUS", field: "status", width: 140,
              headerFilter: "list",
              headerFilterFunc: "in",
-             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true}, // <-- NOVO: multiselect:true
+             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
              editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Fora dos trilhos", "Registro preliminar", "Cancelado"]},
              formatter: function(cell) {
                  let val = cell.getValue();
@@ -371,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, cellClick: function(e, cell){
                 let dados = cell.getRow().getData();
                 if(dados.qtd_imagens > 0){
-                    abrirGaleriaImagens(dados, 'padrao'); // <-- Passa 'padrao'
+                    abrirGaleriaImagens(dados, 'padrao');
                 }
             }},
             {title: "Descrição da não conformidade", field: "descricao", width: 300, formatter: "textarea", editor: "textarea"},
@@ -466,6 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let formData = new FormData(this);
         let payload = Object.fromEntries(formData.entries());
+        payload['responsaveis'] = formData.getAll('responsaveis');
         let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         let btnSalvar = document.getElementById("btnSalvarNovaRNC");
