@@ -13,7 +13,7 @@ User = get_user_model()
 @login_required(login_url='/login/')
 def dashboard_qualidade(request):
     locais_ativos = Local.objects.filter(ativo= True)
-    equipamento_ativos = Equipamento.objects.filter(ativo= True),
+    equipamento_ativos = Equipamento.objects.filter(ativo= True)
 
     usuarios_ativos = User.objects.filter(is_active=True).order_by('first_name')
 
