@@ -24,6 +24,7 @@
     .tabulator-header .tabulator-col[tabulator-field="projeto_cod"],
     .tabulator-header .tabulator-col[tabulator-field="elemento_rastreador"],
     .tabulator-header .tabulator-col[tabulator-field="categoria"],
+    .tabulator-header .tabulator-col[tabulator-field="origem"],
     .tabulator-header .tabulator-col[tabulator-field="criticidade"],
     .tabulator-header .tabulator-col[tabulator-field="descricao"],
     .tabulator-header .tabulator-col[tabulator-field="correcao"],
@@ -136,7 +137,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Origem *</label>
-                            <select name="criticidade" class="form-select shadow-sm" required>
+                            <select name="origem" class="form-select shadow-sm" required>
                                 <option value="">Selecione...</option>
                                 <option value="Comercial">Comercial</option>
                                 <option value="Projeto_Engenharia">Projeto/Engenharia</option>
@@ -403,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, cellClick: function(e, cell){
                 let dados = cell.getRow().getData();
                 if(dados.qtd_imagens_eficacia > 0){
-                    abrirGaleriaImagens(dados, 'eficacia'); // <-- Passa 'eficacia'
+                    abrirGaleriaImagens(dados, 'eficacia');
                 }
             }},
 
@@ -415,7 +416,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // EDIÇÃO INLINE DA TABELA (SALVAMENTO AUTOMÁTICO)
-
     table.on("cellEdited", function(cell){
         let id_rnc = cell.getRow().getData().id;
         let campo_editado = cell.getField();
@@ -566,14 +566,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // FUNÇÃO: ABRIR GALERIA DE IMAGENS
-    window.abrirGaleriaImagens = function(dados, tipo) { // <-- Parâmetro é 'tipo'
+    window.abrirGaleriaImagens = function(dados, tipo) {
         let containerGaleria = document.getElementById('galeria_content');
-        containerGaleria.innerHTML = ''; // Limpa a galeria anterior
+        containerGaleria.innerHTML = '';
 
         let urls = [];
-        let tituloModal = document.querySelector('#modalGaleriaImagens .modal-title'); // <-- Nome corrigido para tituloModal
+        let tituloModal = document.querySelector('#modalGaleriaImagens .modal-title');
 
-        if (tipo === 'eficacia') { // <-- Condição usando 'tipo'
+        if (tipo === 'eficacia') {
             urls = dados.eficacia_imagens_urls || [];
             tituloModal.innerHTML = '<i class="bi bi-shield-check me-2"></i>Evidências de Eficácia';
         } else {
