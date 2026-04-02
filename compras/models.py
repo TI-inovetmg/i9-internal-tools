@@ -78,7 +78,7 @@ class OperacaoCompras(models.Model):
     qtd_pedida = models.FloatField(default=0)
     qtd_recebida = models.FloatField(default=0)
     saldo_a_comprar = models.FloatField(default=0)
-    saldo_a_receber = models.FloatField(default=0)
+    residuo = models.FloatField(default=0)
 
     class Meta:
         verbose_name = "Operação de Compras"

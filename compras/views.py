@@ -12,6 +12,7 @@ from django.db.models import Sum, Avg, Count, Q
 from .models import DataWarehouseCompras, OperacaoCompras
 from django.db import transaction
 from .scripts.sync_protheus import processar_dados_operacionais
+from django.core.paginator import Paginator
 
 
 @csrf_exempt
@@ -333,7 +334,7 @@ def atualizar_dados_dw(request):
                 qtd_pedida=limpa_num(row.get('Qtd_Pedida')),
                 qtd_recebida=limpa_num(row.get('Qtd_Recebida')),
                 saldo_a_comprar=limpa_num(row.get('Saldo_A_Comprar')),
-                saldo_a_receber=limpa_num(row.get('Saldo_A_Receber'))
+                residuo=limpa_num(row.get('Residuo'))
             ))
 
         # Injeção no Banco de Dados com Transação Atômica (O Maestro)
@@ -416,6 +417,8 @@ def dashboard_operacional(request):
     status_filtro = request.GET.get('status')
     pedido_filtro = request.GET.get('pedido')
     nota_filtro = request.GET.get('nota')
+    sc_filtro = request.GET.get('num_sc')
+    fornecedor_filtro = request.GET.get('nome_fornecedor')
     exportar_csv = request.GET.get('export_csv')
 
     if projeto_filtro:
@@ -423,9 +426,13 @@ def dashboard_operacional(request):
     if status_filtro:
         operacoes = operacoes.filter(status_operacional=status_filtro)
     if pedido_filtro:
-        operacoes = operacoes.filter(num_pedidos_vinculados__icontains=pedido_filtro)
+        operacoes = operacoes.filter(num_pedidos_vinculados=pedido_filtro)
     if nota_filtro:
-        operacoes = operacoes.filter(notas_fiscais__icontains=nota_filtro)
+        operacoes = operacoes.filter(notas_fiscais=nota_filtro)
+    if sc_filtro:
+        operacoes = operacoes.filter(num_sc=sc_filtro)
+    if fornecedor_filtro:
+        operacoes = operacoes.filter(nome_fornecedor__icontains=fornecedor_filtro)
 
     if exportar_csv == '1':
         import csv
@@ -439,10 +446,10 @@ def dashboard_operacional(request):
 
         # Cabeçalho do Excel
         writer.writerow([
-            'Filial', 'SC', 'Item', 'Produto', 'Descricao', 'Projeto', 'Tarefa',
-            'Pedido(s)', 'NF(s)', 'Fornecedor', 'Status',
-            'Emissao SC', 'Ultimo Pedido', 'Previsao Entrega', 'Ultima Entrega',
-            'Qtd Solicitada', 'Qtd Comprada', 'Qtd Entregue'
+            'SC', 'Item', 'Produto', 'Descricao', 'Projeto', 'Tarefa',
+            'Fornecedor', 'Status',
+            'Emissao SC',
+            'Qtd Solicitada', 'Qtd Comprada', 'Qtd Entregue', 'Resíduo'
         ])
 
         def formata_dt(data_obj):
@@ -451,11 +458,10 @@ def dashboard_operacional(request):
         # Linhas de Dados
         for op in operacoes:
             writer.writerow([
-                op.filial, op.num_sc, op.item_sc, op.cod_produto, op.descricao, op.projeto_cod, op.tarefa_cod,
-                op.num_pedidos_vinculados, op.notas_fiscais, op.nome_fornecedor, op.status_operacional,
-                formata_dt(op.emissao_sc), formata_dt(op.emissao_ultimo_pedido),
-                formata_dt(op.previsao_entrega), formata_dt(op.ultima_entrega_real),
-                op.qtd_solicitada, op.qtd_pedida, op.qtd_recebida
+                op.num_sc, op.item_sc, op.cod_produto, op.descricao, op.projeto_cod, op.tarefa_cod,
+                op.nome_fornecedor, op.status_operacional,
+                formata_dt(op.emissao_sc),
+                op.qtd_solicitada, op.qtd_pedida, op.qtd_recebida, op.residuo
             ])
 
         return response
@@ -472,17 +478,30 @@ def dashboard_operacional(request):
     lista_projetos = OperacaoCompras.objects.exclude(projeto_cod='').values_list('projeto_cod', flat=True).distinct().order_by('projeto_cod')
     lista_status = OperacaoCompras.objects.exclude(status_operacional='').values_list('status_operacional', flat=True).distinct().order_by('status_operacional')
 
+    paginator = Paginator(operacoes, 50)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+    url_filtros = query_params.urlencode()
+
     # Contexto
     context = {
-        'operacoes': operacoes,
+        'operacoes': page_obj,
         'kpis': kpis,
         'lista_projetos': lista_projetos,
         'lista_status': lista_status,
+        'url_filtros': url_filtros,
         'filtros': {
             'projeto': projeto_filtro,
             'status': status_filtro,
             'pedido': pedido_filtro,
-            'nota': nota_filtro
+            'nota': nota_filtro,
+            'num_sc': sc_filtro,
+            'nome_fornecedor': fornecedor_filtro,
         }
     }
 

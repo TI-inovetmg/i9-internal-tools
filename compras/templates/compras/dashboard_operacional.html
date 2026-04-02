@@ -30,9 +30,6 @@
                 <i class="bi bi-arrow-arrows-o" id="icone-sync"></i>
                 <span id="texto-sync">Sincronizar ERP</span>
             </a>
-            <button type="submit" name="export_csv" value="1" class="btn btn-primary">
-                <i class="bi bi-file-earmark-excel me-1"></i> Exportar Base
-            </button>
         </div>
     </div>
 
@@ -77,11 +74,21 @@
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Status</label>
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Todos os Status</option>
+                    <option value="" selected>Todos os Status</option>
                     {% for status in lista_status %}
                         <option value="{{ status }}" {% if filtros.status == status %}selected{% endif %}>{{ status }}</option>
                     {% endfor %}
                 </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Fornecedor</label>
+                <input type="text" name="nome_fornecedor" class="form-control form-control-sm" value="{{ filtros.nome_fornecedor|default_if_none:'' }}" placeholder="Nome Fornecedor">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">SC</label>
+                <input type="text" name="num_sc" class="form-control form-control-sm" value="{{ filtros.num_sc|default_if_none:'' }}" placeholder="Ex: 259">
             </div>
 
             <div class="col-md-2">
@@ -92,6 +99,9 @@
                 <label class="form-label small fw-bold">Nota Fiscal</label>
                 <input type="text" name="nota" class="form-control form-control-sm" value="{{ filtros.nota|default_if_none:'' }}" placeholder="Ex: 12345">
             </div>
+
+
+            <div class="col-md-auto ms-auto d-flex gap-2">
 
             <div class="col-md-auto ms-auto d-flex gap-2">
                 <button type="submit" class="btn btn-sm btn-primary px-3">
@@ -116,12 +126,13 @@
                         <th>Item</th>
                         <th>Produto / Descrição</th>
                         <th>Projeto</th>
-                        <th>Pedido(s)</th> <th>NF(s)</th>     <th>Fornecedor(es)</th>
-
+                        <th>Pedido(s)</th>
+                        <th>NF(s)</th>
+                        <th>Fornecedor(es)</th>
                         <th class="text-center">Qtd. Solicitada</th>
                         <th class="text-center">Qtd. Comprada</th>
                         <th class="text-center">Qtd. Entregue</th>
-
+                        <th class="text-center text-dark" style="background-color: #ffe69c; border-bottom: 2px solid #ffc107;">Resíduo</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -141,9 +152,12 @@
 
                         <td class="small">{{ op.nome_fornecedor|default:"-" }}</td>
 
-                        <td class="text-center">{{ op.qtd_solicitada }}</td>
-                        <td class="text-center fw-bold text-primary">{{ op.qtd_pedida }}</td>
-                        <td class="text-center fw-bold text-success">{{ op.qtd_recebida }}</td>
+                        <td class="text-center">{{ op.qtd_solicitada | floatformat:2 }}</td>
+                        <td class="text-center fw-bold text-primary">{{ op.qtd_pedida | floatformat:2 }}</td>
+                        <td class="text-center fw-bold text-success">{{ op.qtd_recebida | floatformat:2 }}</td>
+                        <td class="text-center fw-bold" style="background-color: #fff3cd; {% if op.residuo > 0 %}color: #dc3545 !important;{% else %}color: #212529;{% endif %}">
+                            {{ op.residuo|floatformat:2 }}
+                        </td>
 
                         <td>
                             {% if op.status_operacional == 'PENDENTE COTAÇÃO' %}
@@ -163,10 +177,41 @@
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
+        </div> <div class="d-flex justify-content-between align-items-center mt-3">
+            <span class="text-muted small">
+                Mostrando {{ operacoes.start_index }} a {{ operacoes.end_index }} de {{ operacoes.paginator.count }} registros.
+            </span>
 
-<script>
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination pagination-sm m-0">
+
+                    {% if operacoes.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&{{ url_filtros }}">&laquo; Primeira</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ operacoes.previous_page_number }}&{{ url_filtros }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">Página {{ operacoes.number }} de {{ operacoes.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if operacoes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ operacoes.next_page_number }}&{{ url_filtros }}">Próxima</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ operacoes.paginator.num_pages }}&{{ url_filtros }}">Última &raquo;</a>
+                        </li>
+                    {% endif %}
+
+                </ul>
+            </nav>
+        </div>
+
+    </div> </div> <script>
     function mostrarCarregamento(btn) {
         btn.classList.add('disabled');
         document.getElementById('icone-sync').className = 'spinner-border spinner-border-sm me-2';

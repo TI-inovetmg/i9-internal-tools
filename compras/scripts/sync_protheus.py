@@ -213,7 +213,7 @@ def processar_dados_operacionais():
     df_sc7_agg = df_sc7_sd1.groupby(['C7_FILIAL', 'C7_NUMSC', 'C7_ITEMSC']).agg(
         QTD_PEDIDA_TOTAL=('C7_QUANT', 'sum'),
         QTD_RECEBIDA_TOTAL=('QTD_RECEBIDA_TOTAL', 'sum'),
-        VALOR_RECEBIDO_TOTAL=('VALOR_RECEBIDO_TOTAL', 'sum'),  # Repassa Soma Financeira
+        VALOR_RECEBIDO_TOTAL=('VALOR_RECEBIDO_TOTAL', 'sum'),
         NUM_PEDIDOS_VINCULADOS=('C7_NUM', lambda x: ', '.join(x.dropna().unique())),
         NOTAS_FISCAIS=('NOTAS_FISCAIS', lambda x: ', '.join([str(i) for i in x.dropna().unique() if str(i) != ''])),
         COD_FORNECEDOR=('C7_FORNECE', 'last'),
@@ -228,8 +228,8 @@ def processar_dados_operacionais():
                      left_on=['C1_FILIAL', 'C1_NUM', 'C1_ITEM'],
                      right_on=['C7_FILIAL', 'C7_NUMSC', 'C7_ITEMSC'])
 
-    df_op['QTD_PEDIDA_TOTAL'] = df_op['QTD_PEDIDA_TOTAL'].fillna(0)
-    df_op['QTD_RECEBIDA_TOTAL'] = df_op['QTD_RECEBIDA_TOTAL'].fillna(0)
+    df_op['QTD_PEDIDA_TOTAL'] = df_op['QTD_PEDIDA_TOTAL'].fillna(0).round(3)
+    df_op['QTD_RECEBIDA_TOTAL'] = df_op['QTD_RECEBIDA_TOTAL'].fillna(0).round(3)
     df_op['VALOR_RECEBIDO_TOTAL'] = df_op['VALOR_RECEBIDO_TOTAL'].fillna(0)
 
     # Enriquecimento com Fornecedor e Projeto
@@ -246,7 +246,7 @@ def processar_dados_operacionais():
 
     # REGRAS (Saldos e Status Limpo)
     df_op['SALDO_A_COMPRAR'] = (df_op['C1_QUANT'] - df_op['QTD_PEDIDA_TOTAL']).clip(lower=0)
-    df_op['SALDO_A_RECEBER'] = (df_op['QTD_PEDIDA_TOTAL'] - df_op['QTD_RECEBIDA_TOTAL']).clip(lower=0)
+    df_op['RESIDUO'] = (df_op['C1_QUANT'] - df_op['QTD_PEDIDA_TOTAL']).clip(lower=0).round(3)
 
     condicoes = [
         (df_op['QTD_PEDIDA_TOTAL'] == 0),
@@ -272,14 +272,14 @@ def processar_dados_operacionais():
     mapa_colunas = {
         'C1_FILIAL': 'Filial', 'C1_NUM': 'Num_SC', 'C1_ITEM': 'Item_SC',
         'C1_PRODUTO': 'Cod_Produto', 'C1_DESCRI': 'Descricao',
-        'PROJETO_CODIGO': 'Projeto_Cod', 'AFG_TAREFA': 'Tarefa_Cod',
-        'NUM_PEDIDOS_VINCULADOS': 'Num_Pedidos_Vinculados', 'NOTAS_FISCAIS': 'Notas_Fiscais',
-        'A2_NOME': 'Nome_Fornecedor', 'STATUS_OPERACIONAL': 'Status_Operacional',
+        'PROJETO_CODIGO': 'Projeto_Cod', 'NOTAS_FISCAIS': 'Notas_Fiscais', 'AFG_TAREFA': 'Tarefa_Cod',
+        'NUM_PEDIDOS_VINCULADOS': 'Num_Pedidos_Vinculados', 'A2_NOME': 'Nome_Fornecedor',
+        'STATUS_OPERACIONAL': 'Status_Operacional',
         'EMISSAO_SC_FMT': 'Emissao_SC', 'EMISSAO_PEDIDO_FMT': 'Emissao_Ultimo_Pedido',
         'PREVISAO_ENTREGA_FMT': 'Previsao_Entrega', 'ENTREGA_REAL_FMT': 'Ultima_Entrega_Real',
         'C1_QUANT': 'Qtd_Solicitada', 'QTD_PEDIDA_TOTAL': 'Qtd_Pedida',
         'QTD_RECEBIDA_TOTAL': 'Qtd_Recebida', 'SALDO_A_COMPRAR': 'Saldo_A_Comprar',
-        'SALDO_A_RECEBER': 'Saldo_A_Receber', 'VALOR_RECEBIDO_TOTAL': 'Valor_Recebido'  # Valor Adicionado!
+        'RESIDUO': 'Residuo'
     }
 
     df_final = df_op.rename(columns=mapa_colunas)[list(mapa_colunas.values())]
