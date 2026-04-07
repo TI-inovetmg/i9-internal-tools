@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Equipamento, Local, RNC, RNCImagem
 
-
 # Configuração das Tabelas de Domínio
 @admin.register(Equipamento)
 class EquipamentoAdmin(admin.ModelAdmin):
@@ -41,7 +40,7 @@ class RNCAdmin(admin.ModelAdmin):
     readonly_fields = ('data_abertura', 'criado_em', 'atualizado_em', 'versao')
 
     # Adiciona as imagens na mesma página da RNC
-    inlines = [RNCImagemInline]
+    #inlines = [RNCImagemInline]
 
     fieldsets = (
         ('Identificação e Origem', {

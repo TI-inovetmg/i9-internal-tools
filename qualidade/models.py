@@ -122,7 +122,6 @@ class RNC(models.Model):
     def __str__(self):
         return f"RNC #{self.id} - {self.get_status_display()}"
 
-
 class RNCImagem(models.Model):
     rnc = models.ForeignKey(RNC, on_delete=models.CASCADE, related_name='imagens')
     imagem = models.ImageField('Anexo de Imagem', upload_to='qualidade/rnc/imagens/')
@@ -131,6 +130,7 @@ class RNCImagem(models.Model):
     class Meta:
         verbose_name = 'Imagem da RNC'
         verbose_name_plural = 'Imagens da RNC'
+
 
 class RNCEficaciaImagem(models.Model):
     rnc = models.ForeignKey(RNC, on_delete=models.CASCADE, related_name='eficacia_imagens')
@@ -142,4 +142,4 @@ class RNCEficaciaImagem(models.Model):
         verbose_name_plural = 'Imagens da Eficacia das RNCs'
 
     def __str__(self):
-        return f"Anexo da RNC #{self.rnc.id}"
+        return f'Anexo da RNC #{self.rnc.id}'
