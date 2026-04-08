@@ -98,7 +98,9 @@ class RNCService:
         if email:
             # Monta email
             nome_equipamento = rnc.equipamento.nome if rnc.equipamento else "Não informado"
-            codigo_projeto = rnc.projeto_cod if rnc.projeto_cod else "Não informado"
+            local = rnc.local if rnc.local else "Não informado"
+            registrador = rnc.registrador
+            criticidade = rnc.criticidade
 
             email_novo_resp = (
                 f"Atenção, você foi citado em uma RNC.\n\n"
@@ -106,9 +108,11 @@ class RNCService:
                 f"DETALHES DA RNC:\n"
                 f"- ID: {rnc.id}\n"
                 f"- Equipamento: {nome_equipamento}\n"
-                f"- Projeto: {codigo_projeto}\n"
+                f"- Local: {local}\n"
+                f"- Registrador: {registrador}\n"
                 f"- Descrição da Não Conformidade: {rnc.descricao}\n\n"
             )
+
             # Dispara email com send_mail
             try:
                 send_mail(
