@@ -66,7 +66,6 @@ class RNC(models.Model):
         NAO_INICIADA = 'NI', 'Não iniciada'
         EM_ANDAMENTO = 'EA', 'Em andamento'
         CONCLUIDO = 'CO', 'Concluído'
-        FORA_TRILHOS = 'FT', 'Fora dos trilhos'
         PRELIMINAR = 'PR', 'Registro preliminar'
         CANCELADO = 'CA', 'Cancelado'
 

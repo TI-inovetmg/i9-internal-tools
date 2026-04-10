@@ -373,12 +373,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 abrirModalEdicao(dadosDaLinha);
             }},
 
-            {title: "ID", field: "id", headerFilter: "input", headerFilterFunc: filtroMultiploExato, frozen: false},
+            {title: "ID", field: "id", sorter: "number", headerFilter: "input", headerFilterFunc: filtroMultiploExato, frozen: false},
             {title: "Status", field: "status",
              headerFilter: "list",
              headerFilterFunc: "in",
              headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-             editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Fora dos trilhos", "Registro preliminar", "Cancelado"]},
+             editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Registro preliminar", "Cancelado"]},
              formatter: function(cell) {
                  let val = cell.getValue();
                  let color = "secondary";
