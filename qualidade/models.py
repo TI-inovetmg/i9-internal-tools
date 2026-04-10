@@ -43,6 +43,7 @@ class RNC(models.Model):
         PCP = 'PC', 'PCP'
         FABRICACAO = 'FA', 'Fabricação'
         OBRA_MONTAGEM = 'MO', 'Obra / Montagem'
+        MONTAGEM_COMISSIONAMENTO = 'MC', 'Montagem / Comissionamento'
         SUPRIMENTOS = 'SU', 'Suprimentos'
         FORNECEDOR_EXTERNO = 'FO', 'Fornecedor Externo'
         RECEBIMENTO_EXPEDICAO = 'EX', 'Recebimento / Expedição'
@@ -51,6 +52,10 @@ class RNC(models.Model):
         FINANCEIRO = 'FI', 'Financeiro'
         SGQ = 'SG', 'SGQ'
         PLANEJAMENTO_CRONOGRAMA = 'PJ', 'Planejamento / Cronograma'
+        PROCESSO = 'PR', 'Processo'
+        REQUISITOS_CONTRATUAIS = 'RC', 'Requisitos contratuais'
+        REQUISITOS_NORMAS = 'RN', 'Requisitos normas'
+        SISTEMA = 'SI', 'Sistema'
 
     class CriticidadeChoices(models.TextChoices):
         ALTO = 'A', 'Alto'

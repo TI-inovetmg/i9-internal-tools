@@ -140,12 +140,6 @@ def api_criar_rnc(request):
 
         equipamento_id = dados.get('equipamento_id')
         equipamento = Equipamento.objects.get(id=equipamento_id) if equipamento_id else None
-
-        mapa_categoria = {'Comercial': 'CO', 'Engenharia': 'EN', 'PCP': 'PC', 'Fabricação': 'FA', 'Montagem': 'MO', 'Suprimentos': 'SU', 'Fornecedor': 'FO', 'Expedição': 'EX', 'Qualidade': 'QU', 'Recursos Humanos': 'RH', 'Financeiro': 'FI', 'SGQ': 'SG'}
-        mapa_criticidade = {'Alto': 'A', 'Médio': 'M', 'Baixo': 'B'}
-        mapa_detector = {'Cliente': 'CL', 'Interno': 'IN', 'Auditor Interno': 'AI', 'Auditor Externo': 'AE', 'Fornecedor': 'FO'}
-        mapa_origem = {'Comercial': 'CO', 'Projeto_Engenharia': 'PE', 'Fabricação': 'FA', 'Montagem_comissionamento': 'MC', 'Suprimentos': 'SU', 'RH': 'RH', 'Fornecedor': 'FO', 'Processo_interno_SGQ': 'SG'}
-
         registrador_id = dados.get('registrador_id')
         registrador_obj = User.objects.get(id=registrador_id) if registrador_id else request.user
 
@@ -153,10 +147,10 @@ def api_criar_rnc(request):
             registrador=registrador_obj,
             local=local,
             equipamento=equipamento,
-            detector=mapa_detector.get(dados.get('detector')),
-            categoria=mapa_categoria.get(dados.get('categoria')),
-            origem=mapa_origem.get(dados.get('origem')),
-            criticidade=mapa_criticidade.get(dados.get('criticidade')),
+            detector=dados.get('detector'),
+            categoria=dados.get('categoria'),
+            origem=dados.get('origem'),
+            criticidade=dados.get('criticidade'),
             descricao=dados.get('descricao'),
             status = 'PR'
         )
