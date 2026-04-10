@@ -39,17 +39,18 @@ class RNC(models.Model):
 
     class CategoriaChoices(models.TextChoices):
         COMERCIAL = 'CO', 'Comercial'
-        ENGENHARIA = 'EN', 'Engenharia'
+        PROJETO_ENGENHRAIA = 'PE', 'Projeto / Engenharia'
         PCP = 'PC', 'PCP'
         FABRICACAO = 'FA', 'Fabricação'
-        MONTAGEM = 'MO', 'Montagem'
+        OBRA_MONTAGEM = 'MO', 'Obra / Montagem'
         SUPRIMENTOS = 'SU', 'Suprimentos'
-        FORNECEDOR = 'FO', 'Fornecedor'
-        EXPEDICAO = 'EX', 'Expedição'
+        FORNECEDOR_EXTERNO = 'FO', 'Fornecedor Externo'
+        RECEBIMENTO_EXPEDICAO = 'EX', 'Recebimento / Expedição'
         QUALIDADE = 'QU', 'Qualidade'
         RH = 'RH', 'Recursos Humanos'
         FINANCEIRO = 'FI', 'Financeiro'
         SGQ = 'SG', 'SGQ'
+        PLANEJAMENTO_CRONOGRAMA = 'PJ', 'Planejamento / Cronograma'
 
     class CriticidadeChoices(models.TextChoices):
         ALTO = 'A', 'Alto'
@@ -66,13 +67,14 @@ class RNC(models.Model):
 
     class Origem(models.TextChoices):
         COMERCIAL = 'CO', 'Comercial'
-        PROJETO_ENGENHARIA  = 'PE', 'Projeto_Engenharia'
+        PROJETO_ENGENHARIA  = 'PE', 'Projeto / Engenharia'
         FABRICACAO = 'FA', 'Fabricação'
-        MONTAGEM_COMISSIONAMENTO = 'MC', 'Montagem_comissionamento'
+        MONTAGEM_COMISSIONAMENTO = 'MC', 'Montagem / Comissionamento'
         SUPRIMENTOS = 'SU', 'Suprimentos'
         RH = 'RH', 'RH'
         FORNECEDOR = 'FO', 'Fornecedor'
         SGQ = 'SG', 'Processo_interno_SGQ'
+        GERAL = 'GR', 'Geral'
 
 
     # --- Identificação e Origem ---
