@@ -109,7 +109,7 @@ class SolicitacaoVaga(models.Model):
     cargo_solicitante = models.CharField(max_length=100, verbose_name="Seu Cargo Atual")
     data_solicitacao = models.DateTimeField(auto_now_add=True)
 
-    departamento = models.CharField(max_length=50, choices=Vaga.SETORES)  # Reutilizando os setores da classe Vaga
+    departamento = models.CharField(max_length=2, choices=Vaga.SETORES.choices)  # Reutilizando os setores da classe Vaga
     nome_vaga = models.CharField(max_length=150, verbose_name="Nome da Vaga")
     quantidade_vagas = models.PositiveIntegerField(default=1)
     data_prevista_inicio = models.DateField(verbose_name="Data Prevista para Início")
@@ -148,7 +148,7 @@ class PesquisaDemissional(models.Model):
     data_resposta = models.DateTimeField(null=True, blank=True)
 
     ex_funcionario_nome = models.CharField(max_length=150, verbose_name="Nome do Ex-Colaborador")
-    setor = models.CharField(max_length=50, choices=Vaga.SETORES)
+    setor = models.CharField(max_length=2, choices=Vaga.SETORES.choices)
     tipo_demissao = models.CharField(max_length=50, choices=TIPO_DEMISSAO_CHOICES)
     periodo_saida = models.CharField(max_length=50, verbose_name="Mês/Ano de Saída")
     tempo_casa = models.CharField(max_length=50, verbose_name="Tempo de Casa")
