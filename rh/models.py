@@ -1,25 +1,38 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 import uuid
+import os
 
+def validar_curriculo(value):
+    """Validador de Model para garantir que o ficheiro tem  no maximo 5MB e é tipo pdf ou word"""
+    limite_mb = 3
+    limite_maximo = limite_mb * 1024 * 1024
+    if value > limite_maximo:
+        ValorInvalido = f"Tamanho do arquivo excede o limite maximo de {limite_mb} MB"
+
+    extensao = os.path.splitext(value)[1].lower()
+    extensoes = ['.pdf', '.doc', '.docx']
+    if extensao not in extensoes:
+        raise ValidationError('Por questões de segurança, envie apenas curriculos em PDF ou Word')
 
 class Vaga(models.Model):
-    SETORES = [
-        ('COMERCIAL', 'Comercial'),
-        ('COMPRAS', 'Compras'),
-        ('DIRETORIA', 'Diretoria'),
-        ('FINANCEIRO', 'Financeiro'),
-        ('OBRA', 'Obra'),
-        ('ORCAMENTO', 'Orçamento'),
-        ('QUALIDADE', 'Planejamento Processo e Qualidade'),
-        ('PRODUCAO', 'Produção'),
-        ('PROJETOS', 'Projetos'),
-        ('RH', 'Recursos Humanos'),
-        ('TI', 'T.I'),
-    ]
+
+    class SETORES(models.TextChoices):
+        COMERCIAL = 'CA', 'Comercial'
+        COMPRAS = 'CO', 'Compras'
+        DIRETORIA = 'DI', 'Diretoria'
+        FINANCEIRO = 'FI', 'Financeiro'
+        OBRA = 'OB', 'Obra'
+        QUALIDADE = 'QA', 'SGQ'
+        FABRICA = 'FA', 'Fabrica'
+        PROJETOS = 'PR', 'Projetos'
+        ENGENHARIA = 'EG', 'Engenharia'
+        RH = 'RH', 'Recursos Humanos'
+        TI = 'TI', 'T.I'
 
     titulo = models.CharField(max_length=150, verbose_name="Título da Vaga")
-    setor = models.CharField(max_length=50, choices=SETORES)
+    setor = models.CharField(max_length=2, choices=SETORES.choices, verbose_name="Setor")
     descricao = models.TextField(verbose_name="Descrição das Atividades")
     requisitos = models.TextField(verbose_name="Requisitos e Qualificações")
     ativa = models.BooleanField(default=True, verbose_name="Vaga Aberta (Aceitando currículos)")
@@ -33,13 +46,12 @@ class Vaga(models.Model):
 
 
 class Candidatura(models.Model):
-    STATUS_CANDIDATURA = [
-        ('NOVO', 'Novo (Aguardando Triagem)'),
-        ('EM_ANALISE', 'Em Análise'),
-        ('ENTREVISTA', 'Em Fase de Entrevista'),
-        ('APROVADO', 'Aprovado (Contratado)'),
-        ('REPROVADO', 'Reprovado / Banco de Talentos'),
-    ]
+    class STATUS(models.TextChoices):
+        NOVO = 'NO', 'Novo (Aguardando Triagem)'
+        EM_ANALISE = 'EA', 'Em Análise'
+        ENTREVISTA = 'ET', 'Em Fase de Entrevista'
+        APROVADO = 'AP', 'Aprovado (Contratado)'
+        REPROVADO = 'RE', 'Reprovado / Banco de Talentos'
 
     vaga = models.ForeignKey(Vaga, on_delete=models.PROTECT, related_name='candidaturas')
     nome_completo = models.CharField(max_length=150)
@@ -47,9 +59,13 @@ class Candidatura(models.Model):
     telefone = models.CharField(max_length=20, verbose_name="WhatsApp / Telefone")
     linkedin = models.URLField(blank=True, null=True, verbose_name="Perfil do LinkedIn")
 
-    curriculo = models.FileField(upload_to='curriculos/%Y/%m/', verbose_name="Currículo (PDF)")
+    curriculo = models.FileField(
+        upload_to='curriculos/%Y/%m',
+        verbose_name='Currículo (PDF)',
+        validators = [validar_curriculo]
+    )
 
-    status = models.CharField(max_length=20, choices=STATUS_CANDIDATURA, default='NOVO')
+    status = models.CharField(max_length=2, choices=STATUS.choices, default=STATUS.NOVO)
     observacoes_rh = models.TextField(blank=True, verbose_name="Anotações Internas do RH")
     data_aplicacao = models.DateTimeField(auto_now_add=True)
 

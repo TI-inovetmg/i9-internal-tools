@@ -1,4 +1,3 @@
-import os
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Candidatura, Vaga, SolicitacaoVaga, PesquisaDemissional
@@ -15,24 +14,6 @@ class CandidaturaForm(forms.ModelForm):
             'linkedin': forms.URLInput(attrs={'class': 'form-control'}),
             'curriculo': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.doc,.docx'}),
         }
-
-    def clean_curriculo(self):
-        arquivo = self.cleaned_data.get('curriculo')
-
-        if arquivo:
-            tamanho_maximo = 5 * 1024 * 1024  # 5 MB
-            if arquivo.size > tamanho_maximo:
-                raise ValidationError('O arquivo excede o limite de 5MB.')
-
-            extensao = os.path.splitext(arquivo.name)[1].lower()
-            extensoes_permitidas = ['.pdf', '.doc', '.docx']
-
-            if extensao not in extensoes_permitidas:
-                raise ValidationError('Segurança: Envie apenas currículos em PDF ou Word.')
-
-        return arquivo
-
-
 
 class VagaForm(forms.ModelForm):
     class Meta:
