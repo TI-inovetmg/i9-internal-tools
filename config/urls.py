@@ -20,7 +20,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from core.views import home
 from django.contrib.auth import views as auth_views
-from django.views.static import serve
 
 urlpatterns = [
             path('painel-i9tmg-restrito/', admin.site.urls),
