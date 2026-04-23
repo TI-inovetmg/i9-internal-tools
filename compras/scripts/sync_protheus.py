@@ -39,8 +39,8 @@ def processar_dados():
     print("[2/4] Processando e limpando dados (ETL)...")
 
     # Leitura
-    df_sc1 = ler_tabela_sqlite('sc10101.sdb')
-    df_sc7 = ler_tabela_sqlite('sc70101.sdb')
+    df_sc1 = ler_tabela_sqlite('sc101011.sdb')
+    df_sc7 = ler_tabela_sqlite('sc701011.sdb')
     df_sa2 = ler_tabela_sqlite('sa201011.sdb')
     df_sd1 = ler_tabela_sqlite('sd10101.sdb')
     df_afg = ler_tabela_sqlite('afg0101.sdb')
@@ -123,8 +123,8 @@ def processar_dados():
 def processar_dados_operacionais():
     print('[ETL OPERACIONAL] Processando base bottom-up...')
 
-    df_sc1 = ler_tabela_sqlite('sc10101.sdb')
-    df_sc7 = ler_tabela_sqlite('sc70101.sdb')
+    df_sc1 = ler_tabela_sqlite('sc101011.sdb')
+    df_sc7 = ler_tabela_sqlite('sc701011.sdb')
     df_sa2 = ler_tabela_sqlite('sa201011.sdb')
     df_sd1 = ler_tabela_sqlite('sd10101.sdb')
     df_afg = ler_tabela_sqlite('afg0101.sdb')
