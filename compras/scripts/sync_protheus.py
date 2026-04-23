@@ -10,7 +10,7 @@ EXCEL_PATH = os.path.join(DATA_DIR, 'report_SC_x_PC.xlsx')
 EXCEL_OPERACIONAL_PATH = os.path.join(DATA_DIR, 'report_operacional.xlsx')
 
 ARQUIVOS_COMPRAS = [
-    'sc10101.sdb', 'sc70101.sdb',
+    'sc101011.sdb', 'sc701011.sdb',
     'sa201011.sdb', 'sd10101.sdb', 'afg0101.sdb'
 ]
 
