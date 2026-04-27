@@ -1,21 +1,25 @@
 import json
 from datetime import datetime
 
-from cryptography.x509 import random_serial_number
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .models import RNC, Local, Equipamento, RNCImagem, RNCEficaciaImagem
 from .service import RNCService
 from core.decorators import exige_permissao
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from . serializers import RNCSerializer
+
 User = get_user_model()
 
 @login_required(login_url='/login/')
-@exige_permissao(['qualidade'])
 def dashboard_qualidade(request):
+    usuario_sgq = request.user.pode_acessar_modulo('qualidade')
+
     locais_ativos = Local.objects.filter(ativo= True)
     equipamento_ativos = Equipamento.objects.filter(ativo= True)
 
@@ -24,7 +28,8 @@ def dashboard_qualidade(request):
     context = {
         'locais': locais_ativos,
         'equipamentos': equipamento_ativos,
-        'usuarios': usuarios_ativos
+        'usuarios': usuarios_ativos,
+        'is_sgq': usuario_sgq
     }
     return render(request, 'qualidade/dashboard.html', context)
 
@@ -76,7 +81,14 @@ def api_listar_rncs(request):
             'imagens_urls': imagens_urls,
             'eficacia_imagens_urls': imagens_eficacia_urls,
             'qtd_imagens_eficacia': len(imagens_eficacia_urls),
-            'primeira_imagem_eficacia_url': imagens_eficacia_urls[0] if imagens_eficacia_urls else ''
+            'primeira_imagem_eficacia_url': imagens_eficacia_urls[0] if imagens_eficacia_urls else '',
+            'status_code': rnc.status,
+            'categoria_code': rnc.categoria,
+            'origem_code': rnc.origem,
+            'criticidade_code': rnc.criticidade,
+            'detector_code': rnc.detector,
+            'equipamento_id': rnc.equipamento.id if rnc.equipamento else '',
+            'local_id': rnc.local.id if rnc.local else '',
         })
 
     return JsonResponse(data, safe=False)
@@ -84,6 +96,7 @@ def api_listar_rncs(request):
 
 @login_required(login_url='/login/')
 @require_POST
+@exige_permissao(['qualidade'])
 def api_atualizar_rnc(request, rnc_id):
     try:
         dados = json.loads(request.body)
@@ -138,10 +151,10 @@ def api_criar_rnc(request):
     try:
         dados = json.loads(request.body)
 
-        local = Local.objects.get(id=dados.get('local_id'))
-
+        local = get_object_or_404(Local, id=dados.get('local_id'))
         equipamento_id = dados.get('equipamento_id')
-        equipamento = Equipamento.objects.get(id=equipamento_id) if equipamento_id else None
+        equipamento = get_object_or_404(Equipamento, id=equipamento_id) if equipamento_id else None
+
         registrador_id = dados.get('registrador_id')
         registrador_obj = User.objects.get(id=registrador_id) if registrador_id else request.user
 
@@ -170,73 +183,76 @@ def api_criar_rnc(request):
 
 
 @login_required(login_url='/login/')
-@require_POST
-def api_editar_rnc_avancado(request, rnc_id):
-    try:
-        rnc = RNC.objects.get(id=rnc_id)
+@api_view(['POST'])
+def api_criar_rnc(request):
+    dados = request.data.copy()
+    dados['status'] = 'PR'
+    dados['local'] = dados.get('local_id')
+    if dados.get('equipamento_id'):
+        dados['equipamento'] = dados.get('equipamento_id')
+    dados['registrador'] = dados.get('registrador_id') or request.user.id
+    dados['status'] = 'PR'
+    serializer = RNCSerializer(data=dados)
 
-        data_antiga = rnc.data_encerramento
-        data_previsao = rnc.data_prevista_conclusao
-
-        data_encerramento = request.POST.get('data_encerramento')
-        if data_encerramento:
-            rnc.data_encerramento = datetime.strptime(data_encerramento, '%Y-%m-%d').date()
-        elif data_encerramento == "":
-            rnc.data_encerramento = None
-
-        data_prevista = request.POST.get('data_prevista')
-        if data_prevista:
-            rnc.data_prevista_conclusao = datetime.strptime(data_prevista, '%Y-%m-%d').date()
-        elif data_prevista == "":
-            rnc.data_prevista_conclusao = None
-
-        # Tratamento do Ishikawa
-        ishikawa_link = request.POST.get('ishikawa_link')
-        if ishikawa_link is not None:
-            rnc.ishikawa_link = ishikawa_link
-
-
-        # Tratamento dos Responsáveis
-        responsaveis_ids = request.POST.getlist('responsaveis')
+    if serializer.is_valid():
+        # O .save() aqui executa automaticamente o RNC.objects.create() por baixo dos panos!
+        nova_rnc = serializer.save()
+        responsaveis_ids = dados.get('responsaveis', [])
         if responsaveis_ids:
-            ids_antigos = set(rnc.responsaveis.values_list('id', flat=True))
-            ids_novos = set(int(id) for id in responsaveis_ids)
-            ids_novatos = ids_novos - ids_antigos
-            rnc.responsaveis.set(responsaveis_ids)
-            if ids_novatos:
-                RNCService.notificar_nova_rnc(rnc.id, ids_novatos)
-        else:
-            rnc.responsaveis.clear()
+            nova_rnc.responsaveis.set(responsaveis_ids)
+            RNCService.notificar_nova_rnc(nova_rnc.id, responsaveis_ids)
+        return Response({'status': 'sucesso', 'rnc_id': nova_rnc.id})
+    else:
+        print(f"ERROS DE VALIDAÇÃO: {serializer.errors}")
+        return Response({'status': 'erro', 'mensagem': serializer.errors}, status=400)
 
-        registrador_id = request.POST.get('registrador_id')
-        if registrador_id:
-            rnc.registrador_id = registrador_id
 
-        # 5. Tratamento do PDF
-        if 'eficacia_pdf' in request.FILES:
-            rnc.eficacia_pdf = request.FILES['eficacia_pdf']
+@login_required(login_url='/login/')
+@api_view(['POST'])
+@exige_permissao(['qualidade'])
+def api_editar_rnc_avancado(request, rnc_id):
+    rnc = get_object_or_404(RNC, id=rnc_id)
 
-        # Salva o registo principal
-        rnc.save()
+    # 2. Guardamos as datas antigas para a lógica de e-mail (Mantemos sua regra de negócio)
+    data_antiga = rnc.data_encerramento
+    data_previsao = rnc.data_prevista_conclusao
 
-        # Tratamento das Imagens Adicionais
+    # 3. A Mágica do DRF: O Serializer faz o parse das datas, valida as siglas (Choices) e os arquivos!
+    # O "partial=True" diz ao DRF: "Atualize apenas os campos que vierem no request, não exija todos".
+    serializer = RNCSerializer(instance=rnc, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        # Se os dados estiverem perfeitos, salva no banco.
+        rnc_atualizada = serializer.save()
+
+        # ==========================================
+        # SEU DESAFIO AQUI (Complete o código):
+        # O Serializer já salvou os responsáveis, o Ishikawa, os status, categoria, datas e o PDF principal!
+        # Mas você ainda precisa lidar com as tabelas filhas (Imagens extras e Imagens de Eficácia).
+        # Como você extrairia os arquivos MÚLTIPLOS de request.FILES e salvaria nas tabelas
+        # RNCImagem e RNCEficaciaImagem usando o objeto 'rnc_atualizada'?
+        # DICA: No DRF, você não usa request.FILES, você pode usar request.FILES.getlist('imagens')
+        # ==========================================
+
         imagens = request.FILES.getlist('imagens')
         for img in imagens:
-            RNCImagem.objects.create(rnc=rnc, imagem=img)
+            # Para cada arquivo, criamos uma nova linha na tabela RNCImagem
+            RNCImagem.objects.create(rnc=rnc_atualizada, imagem=img)
 
         imagens_eficacia = request.FILES.getlist('imagens_eficacia')
         for img in imagens_eficacia:
-            RNCEficaciaImagem.objects.create(rnc=rnc, imagens_eficacia=img)
+            # Para cada arquivo, criamos uma nova linha na tabela RNCEficaciaImagem
+            RNCEficaciaImagem.objects.create(rnc=rnc_atualizada, imagens_eficacia=img)
 
-        # Gatilho do E-mail
-        if rnc.data_encerramento and rnc.data_encerramento != data_antiga:
-            RNCService._notificar_data_encerramento(rnc.id)
+        # Gatilho de e-mails (Mantemos sua regra)
+        if rnc_atualizada.data_encerramento and rnc_atualizada.data_encerramento != data_antiga:
+            RNCService._notificar_data_encerramento(rnc_atualizada.id)
 
-        if rnc.data_prevista_conclusao and rnc.data_prevista_conclusao != data_previsao:
-            RNCService._notificar_data_previsao(rnc.id)
+        if rnc_atualizada.data_prevista_conclusao and rnc_atualizada.data_prevista_conclusao != data_previsao:
+            RNCService._notificar_data_previsao(rnc_atualizada.id)
 
-        return JsonResponse({'status': 'sucesso'})
-
-    except Exception as e:
-        print(f"ERRO NA EDIÇÃO AVANÇADA: {e}")
-        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
+        # O DRF usa 'Response' ao invés de 'JsonResponse'
+        return Response({'status': 'sucesso'})
+    else:
+        # Se alguém mandar uma sigla errada ou data num formato bizarro, o DRF te diz EXATAMENTE o campo que falhou!
+        return Response({'status': 'erro', 'mensagem': serializer.errors}, status=400)

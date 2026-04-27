@@ -13,14 +13,11 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-    /* Estilo Base da Tabela */
     .tabulator { border: none !important; border-radius: 8px; }
     .tabulator-header { background-color: #f8f9fa !important; color: #495057 !important; font-weight: 600; }
     .tabulator-row:nth-child(even) { background-color: #fcfcfc !important; }
     .tabulator-row:hover { background-color: #f1f3f5 !important; }
 
-
-    /* DESTAQUE PARA CABEÇALHOS EDITÁVEIS (INLINE)*/
     .tabulator-header .tabulator-col[tabulator-field="status"],
     .tabulator-header .tabulator-col[tabulator-field="detector"],
     .tabulator-header .tabulator-col[tabulator-field="projeto_cod"],
@@ -38,17 +35,8 @@
         border-bottom: 3px solid #38bdf8 !important;
         cursor: text !important;
     }
-    .tabulator .tabulator-footer {
-        display: flex !important;
-        justify-content: flex-start !important;
-        padding: 10px !important;
-    }
-
-    .tabulator .tabulator-footer .tabulator-paginator {
-        justify-content: flex-start !important;
-        flex: 1 !important; /* Faz o paginador ocupar o espaço inteiro à esquerda */
-        margin: 0 !important;
-    }
+    .tabulator .tabulator-footer { display: flex !important; justify-content: flex-start !important; padding: 10px !important; }
+    .tabulator .tabulator-footer .tabulator-paginator { justify-content: flex-start !important; flex: 1 !important; margin: 0 !important; }
 </style>
 
 <div class="container-fluid p-0">
@@ -65,7 +53,6 @@
             <button type="button" class="btn btn-primary shadow-sm border-0" data-bs-toggle="modal" data-bs-target="#modalNovaRNC">
                 <i class="bi bi-plus-lg me-2"></i>Nova RNC
             </button>
-
             <button id="download-xlsx" class="btn btn-success shadow-sm border-0">
                 <i class="bi bi-file-earmark-excel me-2"></i>Exportar Planilha
             </button>
@@ -78,18 +65,16 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalNovaRNC" tabindex="-1" aria-labelledby="modalNovaRNCLabel" aria-hidden="true">
+<div class="modal fade" id="modalNovaRNC" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalNovaRNCLabel"><i class="bi bi-plus-circle me-2"></i>Novo Registo Preliminar de NC</h5>
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Novo Registo Preliminar de NC</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
             <form id="formNovaRNC">
                 <div class="modal-body bg-light">
                     <div class="row g-3">
-
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Local/Setor *</label>
                             <select name="local_id" class="form-select shadow-sm" required>
@@ -108,7 +93,6 @@
                                 {% endfor %}
                             </select>
                         </div>
-
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Detector *</label>
                             <select name="detector" class="form-select shadow-sm" required>
@@ -120,8 +104,7 @@
                                 <option value="FO">Fornecedor</option>
                             </select>
                         </div>
-
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold small">Registrador</label>
                             <select name="registrador_id" class="form-select shadow-sm">
                                 <option value="">Selecione o registrador real...</option>
@@ -132,8 +115,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold small">Categoria da Não Conformidade *</label>
                             <select name="categoria" class="form-select shadow-sm" required>
                                 <option value="">Selecione...</option>
@@ -142,18 +124,18 @@
                                 <option value="PC">PCP</option>
                                 <option value="FA">Fabricação</option>
                                 <option value="MO">Obra / Montagem</option>
+                                <option value="MC">Montagem / Comissionamento</option>
                                 <option value="SU">Suprimentos</option>
-                                <option value="FO">Fornecedor externo</option>
+                                <option value="FO">Fornecedor Externo</option>
                                 <option value="EX">Recebimento / Expedição</option>
                                 <option value="QU">Qualidade</option>
                                 <option value="RH">Recursos Humanos</option>
                                 <option value="FI">Financeiro</option>
                                 <option value="SG">SGQ</option>
                                 <option value="PJ">Planejamento / Cronograma</option>
-                                <option value="MC">Montagem / Comissionamento</option>
                                 <option value="PR">Processo</option>
-                                <option value="RC">Requisitos Contratuais</option>
-                                <option value="RN">Requisitos de Normas</option>
+                                <option value="RC">Requisitos contratuais</option>
+                                <option value="RN">Requisitos normas</option>
                                 <option value="SI">Sistema</option>
                             </select>
                         </div>
@@ -166,23 +148,21 @@
                                 <option value="B">Baixo</option>
                             </select>
                         </div>
-
                         <div class="col-md-4">
                             <label class="form-label fw-bold small">Origem *</label>
                             <select name="origem" class="form-select shadow-sm" required>
                                 <option value="">Selecione...</option>
                                 <option value="CO">Comercial</option>
-                                <option value="PE">Projeto/Engenharia</option>
+                                <option value="PE">Projeto / Engenharia</option>
                                 <option value="FA">Fabricação</option>
-                                <option value="MC">Montagem/Comissionamento</option>
+                                <option value="MC">Montagem / Comissionamento</option>
                                 <option value="SU">Suprimentos</option>
                                 <option value="RH">RH</option>
                                 <option value="FO">Fornecedor</option>
-                                <option value="SG">SGQ</option>
+                                <option value="SG">Processo Interno SGQ</option>
                                 <option value="GR">Geral</option>
                             </select>
                         </div>
-
                         <div class="col-12 mt-3">
                             <label class="form-label fw-bold small">Responsáveis (Opcional)</label>
                             <p class="text-muted" style="font-size: 0.75rem; margin-top: -5px; margin-bottom: 5px;">Segure a tecla CTRL para selecionar várias pessoas.</p>
@@ -192,7 +172,6 @@
                                 {% endfor %}
                             </select>
                         </div>
-
                         <div class="col-12">
                             <label class="form-label fw-bold small">Descrição da Não Conformidade *</label>
                             <textarea name="descricao" class="form-control shadow-sm" rows="4" required placeholder="Descreva o problema de forma clara e objetiva..."></textarea>
@@ -210,35 +189,30 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalEditarRNC" tabindex="-1" aria-labelledby="modalEditarRNCLabel" aria-hidden="true">
+<div class="modal fade" id="modalEditarRNC" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title fw-bold" id="modalEditarRNCLabel"><i class="bi bi-pencil-square me-2"></i>Painel de Edição - RNC #<span id="display_rnc_id"></span></h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Painel de Edição - RNC #<span id="display_rnc_id"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
             <form id="formEditarRNC" enctype="multipart/form-data">
                 <div class="modal-body bg-light">
                     <input type="hidden" id="edit_rnc_id" name="rnc_id">
 
                     <div class="row g-3">
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-primary">Data de Encerramento</label>
                             <input type="date" id="edit_data_encerramento" name="data_encerramento" class="form-control shadow-sm">
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-primary">Data Finalização Prevista</label>
                             <input type="date" id="edit_data_prevista" name="data_prevista" class="form-control shadow-sm">
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-primary">Diagrama de Ishikawa (Link URL)</label>
                             <input type="url" id="edit_ishikawa_link" name="ishikawa_link" class="form-control shadow-sm" placeholder="https://...">
                         </div>
-
                         <div class="col-12">
                             <label class="form-label fw-bold small text-primary">Responsáveis pela RNC</label>
                             <select multiple id="edit_responsaveis" name="responsaveis" class="form-control shadow-sm">
@@ -247,8 +221,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-
-                        <div class="col-md-6 mt-3">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold small">Registrador</label>
                             <select name="registrador_id" id="edit_registrador_id" class="form-select shadow-sm">
                                 <option value="">Selecione o registrador real...</option>
@@ -266,17 +239,84 @@
                             <label class="form-label fw-bold small text-danger"><i class="bi bi-file-pdf"></i> PDF de Eficácia</label>
                             <input type="file" id="edit_eficacia_pdf" name="eficacia_pdf" class="form-control shadow-sm" accept=".pdf">
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-success"><i class="bi bi-images"></i> Anexar Imagens NC</label>
                             <input type="file" id="edit_imagens" name="imagens" class="form-control shadow-sm" accept="image/*" multiple>
                         </div>
-
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-success"><i class="bi bi-images"></i> Anexar Imagens Eficacia</label>
+                            <label class="form-label fw-bold small text-success"><i class="bi bi-images"></i> Anexar Imagens Eficácia</label>
                             <input type="file" id="edit_imagens_eficacia" name="imagens_eficacia" class="form-control shadow-sm" accept="image/*" multiple>
                         </div>
+                    </div>
 
+                    <hr class="mt-4">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">Status</label>
+                            <select id="edit_status" name="status" class="form-select shadow-sm">
+                                <option value="NI">Não iniciada</option>
+                                <option value="EA">Em andamento</option>
+                                <option value="CO">Concluído</option>
+                                <option value="PR">Registro preliminar</option>
+                                <option value="CA">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">Detector</label>
+                            <select id="edit_detector" name="detector" class="form-select shadow-sm">
+                                <option value="CL">Cliente</option>
+                                <option value="IN">Interno</option>
+                                <option value="AI">Auditor Interno</option>
+                                <option value="AE">Auditor Externo</option>
+                                <option value="FO">Fornecedor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">Criticidade</label>
+                            <select id="edit_criticidade" name="criticidade" class="form-select shadow-sm">
+                                <option value="A">Alto</option>
+                                <option value="M">Médio</option>
+                                <option value="B">Baixo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Categoria</label>
+                            <select id="edit_categoria" name="categoria" class="form-select shadow-sm">
+                                <option value="CO">Comercial</option>
+                                <option value="PE">Projeto / Engenharia</option>
+                                <option value="PC">PCP</option>
+                                <option value="FA">Fabricação</option>
+                                <option value="MO">Obra / Montagem</option>
+                                <option value="MC">Montagem / Comissionamento</option>
+                                <option value="SU">Suprimentos</option>
+                                <option value="FO">Fornecedor Externo</option>
+                                <option value="EX">Recebimento / Expedição</option>
+                                <option value="QU">Qualidade</option>
+                                <option value="RH">Recursos Humanos</option>
+                                <option value="FI">Financeiro</option>
+                                <option value="SG">SGQ</option>
+                                <option value="PJ">Planejamento / Cronograma</option>
+                                <option value="PR">Processo</option>
+                                <option value="RC">Requisitos contratuais</option>
+                                <option value="RN">Requisitos normas</option>
+                                <option value="SI">Sistema</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Origem</label>
+                            <select id="edit_origem" name="origem" class="form-select shadow-sm">
+                                <option value="CO">Comercial</option>
+                                <option value="PE">Projeto / Engenharia</option>
+                                <option value="FA">Fabricação</option>
+                                <option value="MC">Montagem / Comissionamento</option>
+                                <option value="SU">Suprimentos</option>
+                                <option value="RH">RH</option>
+                                <option value="FO">Fornecedor</option>
+                                <option value="SG">Processo Interno SGQ</option>
+                                <option value="GR">Geral</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -307,17 +347,11 @@
     </div>
 </div>
 
-
 <script>
-// ABERTURA DO ESCOPO PRINCIPAL DO JAVASCRIPT
 document.addEventListener('DOMContentLoaded', function() {
+    var isSGQ= "{{is_sgq|yesno:'true,false'}}" === "true";
+    var listaTodosUsuarios = [{% for user in usuarios %} "{{ user.get_full_name|default:user.username }}", {% endfor %}];
 
-    var listaTodosUsuarios = [
-        {% for user in usuarios %}
-            "{{ user.get_full_name|default:user.username }}",
-        {% endfor %}
-    ];
-    // SELECT DROPDOWN EDITAR RNC - RESPONSAVEIS
     window.choicesResp = new Choices('#edit_responsaveis', {
         removeItemButton: true,
         searchEnable: true,
@@ -327,30 +361,23 @@ document.addEventListener('DOMContentLoaded', function() {
         noResultsText: 'Nenhum usuário encontrado',
     })
 
-    // FORMATAÇÃO E INICIALIZAÇÃO DA TABELA
     var formatarDataBR = function(cell){
         let val = cell.getValue();
         if (!val) return "-";
         val = String(val).replace(/\//g, '-');
-
         if(val.includes('-')){
             let parts = val.split('-');
-            if(parts[0].length === 4){
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
+            if(parts[0].length === 4){ return `${parts[2]}/${parts[1]}/${parts[0]}`; }
         }
         return val;
     };
 
-    // FORMATADOR EXCLUSIVO PARA O DOWNLOAD DO EXCEL
     var formatarDataExcel = function(value, data, type, params, column){
         if (!value) return "";
         let val = String(value).replace(/\//g, '-');
         if(val.includes('-')){
             let parts = val.split('-');
-            if(parts[0].length === 4){
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
+            if(parts[0].length === 4){ return `${parts[2]}/${parts[1]}/${parts[0]}`; }
         }
         return val;
     };
@@ -382,8 +409,8 @@ document.addEventListener('DOMContentLoaded', function() {
         movableColumns: true,
 
         columns: [
-            {title: "Ações", field: "acoes", download: false, hozAlign: "center", formatter: function(cell){
-                return `<button class="btn btn-sm btn-primary py-0 btn-editar-rnc" title="Editar RNC completo">
+            {title: "Ações", field: "acoes", visible: isSGQ, download: false, hozAlign: "center", formatter: function(cell){
+                return `<button type="button" class="btn btn-sm btn-primary py-0 btn-editar-rnc" title="Editar RNC completo">
                             <i class="bi bi-pencil-square"></i> Editar
                         </button>`;
             }, cellClick: function(e, cell){
@@ -392,11 +419,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }},
 
             {title: "ID", field: "id", sorter: "number", headerFilter: "input", headerFilterFunc: filtroMultiploExato, frozen: false},
+
             {title: "Status", field: "status",
-             headerFilter: "list",
-             headerFilterFunc: "in",
-             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-             editor: "list", editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Registro preliminar", "Cancelado"]},
+             headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+             editor: "list", editable: function(cell){ return isSGQ; },
+             editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Registro preliminar", "Cancelado"]},
              formatter: function(cell) {
                  let val = cell.getValue();
                  let color = "secondary";
@@ -408,71 +435,60 @@ document.addEventListener('DOMContentLoaded', function() {
              }
             },
 
-            {title: "Registrador", field: "registrador",
-                headerFilter: "list",
-                headerFilterFunc: 'in',
-                headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true}
-            },
+            {title: "Registrador", field: "registrador", headerFilter: "list", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+
             {title: "Detector", field: "detector",
-             headerFilter: "list",
-             headerFilterFunc: "in",
-             headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-             editor: "list", editorParams: {values: ["Cliente", "Interno", "Auditor Interno", "Auditor Externo", "Fornecedor"]}},
+             headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+             editor: "list", editable: function(cell){ return isSGQ; },
+             editorParams: {values: ["Cliente", "Interno", "Auditor Interno", "Auditor Externo", "Fornecedor"]}
+            },
+
             {title: "Data Abertura", field: "data_abertura", accessorDownload: formatarDataExcel, headerFilter: "input", headerFilterFunc: filtroMultiploTexto, formatter: formatarDataBR},
+
             {title: "Projeto", field: "projeto_cod",
-             headerFilter: "input", editor: "input",
+             headerFilter: "input", editor: "input", editable: function(cell){ return isSGQ; },
              headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-                 // Se o filtro estiver vazio, mostra todas as linhas
                  if (!headerValue) return true;
-                 // Se a célula estiver vazia mas há filtro, esconde a linha
                  if (!rowValue) return false;
-                 // Pega o que o utilizador digitou, separa por vírgula, e converte para minúsculas
                  let termos = headerValue.split(',').map(termo => termo.trim().toLowerCase()).filter(termo => termo !== "");
-                 // Pega o valor da célula (banco de dados) e converte para minúsculas
                  let valorCelula = String(rowValue).toLowerCase();
-                 // Retorna TRUE se a célula contiver ALGUM (some) dos termos digitados (Lógica OR)
                  return termos.some(termo => valorCelula.includes(termo));
              }
             },
-            {title: "Equipamento", field: "equipamento",
-                headerFilter: "input",
-                headerFilterFunc: 'in',
-                headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true}
-            },
-            {title: "Elemento Rastreador", field: "elemento_rastreador", headerFilter: "input", editor: "input"},
-            {title: "Local Detecção", field: "local",
 
-                headerFilter: "list",
-                headerFilterFunc: "in",
-                headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true}
-            },
+            {title: "Equipamento", field: "equipamento", headerFilter: "input", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+
+            {title: "Elemento Rastreador", field: "elemento_rastreador", headerFilter: "input", editor: "input", editable: function(cell){ return isSGQ; }},
+
+            {title: "Local Detecção", field: "local", headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+
             {title: "Origem", field: "origem",
-                headerFilter: 'list',
-                headerFilterFunc: 'in',
-                headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
+                headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
                 formatter: "lookup", formatterParams: {
-                    "CO": "Comercial", "PE": "Projeto/Eng.", "FA": "Fabricação", "MC": "Montagem/Comis.", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "SGQ"
+                    "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral"
                 },
-                editor: "list", editorParams: {
-                    values: { "CO": "Comercial", "PE": "Projeto/Eng.", "FA": "Fabricação", "MC": "Montagem/Comis.", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "SGQ" }
+                editor: "list", editable: function(cell){ return isSGQ; },
+                editorParams: {
+                    values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral" }
                 }
             },
+
             {title: "Categoria", field: "categoria",
-                headerFilter: 'list',
-                headerFilterFunc: 'in',
-                headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
+                headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
                 formatter: "lookup", formatterParams: {
-                    "CO": "Comercial", "EN": "Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Montagem/Comis.", "SU": "Suprimentos", "FO": "Fornecedor", "EX": "Expedição", "QU": "Qualidade", "RH": "RH", "FI": "Financeiro", "SG": "SGQ"
+                    "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema"
                 },
-                editor: "list", editorParams: {
-                    values: { "CO": "Comercial", "EN": "Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Montagem/Comis.", "SU": "Suprimentos", "FO": "Fornecedor", "EX": "Expedição", "QU": "Qualidade", "RH": "RH", "FI": "Financeiro", "SG": "SGQ" }
+                editor: "list", editable: function(cell){ return isSGQ; },
+                editorParams: {
+                    values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema" }
                 }
             },
+
             {title: "Criticidade", field: "criticidade",
-            headerFilter: "list",
-            headerFilterFunc: "in",
-            headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-            editor: "list", editorParams: {values: ["Alto", "Médio", "Baixo"]}},
+                headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+                editor: "list", editable: function(cell){ return isSGQ; }, editorParams: {values: ["Alto", "Médio", "Baixo"]}
+            },
+
             {title: "Imagem NC", field: "qtd_imagens", hozAlign: "center", formatter: function(cell){
                 let qtd = cell.getValue();
                 if(qtd > 0) {
@@ -483,39 +499,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 return "-";
             }, cellClick: function(e, cell){
                 let dados = cell.getRow().getData();
-                if(dados.qtd_imagens > 0){
-                    abrirGaleriaImagens(dados, 'padrao');
-                }
+                if(dados.qtd_imagens > 0){ abrirGaleriaImagens(dados, 'padrao'); }
             }},
-            {title: "Descrição da não conformidade", field: "descricao", formatter: "textarea", editor: "textarea"},
-            {title: "Correção Imediata", field: "correcao", formatter: "textarea", editor: "textarea"},
-            {title: "Causas Principais", field: "causas_principais", formatter: "textarea", editor: "textarea"},
-            {title: "Ação Corretiva", field: "acao_corretiva", formatter: "textarea", editor: "textarea"},
-            {title: "Eficácia (Texto)", field: "eficacia_texto", formatter: "textarea", editor: "textarea"},
+
+            {title: "Descrição da não conformidade", field: "descricao", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
+            {title: "Correção Imediata", field: "correcao", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
+            {title: "Causas Principais", field: "causas_principais", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
+            {title: "Ação Corretiva", field: "acao_corretiva", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
+            {title: "Eficácia (Texto)", field: "eficacia_texto", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
 
             {title: "Responsavel", field: "responsaveis",
                 headerFilter: "list",
-                // Filtro Responsaveis
                 headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-                    // Se nada estiver selecionado no filtro, mostra todas as linhas
                     if (!headerValue || headerValue.length === 0) return true;
-                    // Se a linha não tiver responsável, esconde
                     if (!rowValue) return false;
-
                     let textoCelula = String(rowValue);
-
-                    // Retorna verdadeiro se a célula tiver ALGUM dos responsáveis selecionados
                     return headerValue.some(nomeSelecionado => textoCelula.includes(nomeSelecionado));
                 },
-                headerFilterParams: {
-                    values: listaTodosUsuarios,
-                    clearable: true,
-                    multiselect: true
-                }
+                headerFilterParams: { values: listaTodosUsuarios, clearable: true, multiselect: true }
             },
 
-            {title: "Data Previsão Conclusão", field: "data_prevista_conclusao", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
-            {title: "Data Encerramento", field: "data_encerramento", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editorParams:{ format:"yyyy-MM-dd" }},
+            {title: "Data Previsão Conclusão", field: "data_prevista_conclusao", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editable: function(cell){ return isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
+            {title: "Data Encerramento", field: "data_encerramento", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editable: function(cell){ return isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
 
             {title: "Ishikawa", field: "ishikawa_link", formatter: function(cell){
                 let url = cell.getValue();
@@ -537,11 +542,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return "-";
             }, cellClick: function(e, cell){
                 let dados = cell.getRow().getData();
-                if(dados.qtd_imagens_eficacia > 0){
-                    abrirGaleriaImagens(dados, 'eficacia');
-                }
+                if(dados.qtd_imagens_eficacia > 0){ abrirGaleriaImagens(dados, 'eficacia'); }
             }},
-
         ],
         locale: "pt-br",
         langs: {
@@ -549,190 +551,126 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // EDIÇÃO INLINE DA TABELA (SALVAMENTO AUTOMÁTICO)
     table.on("cellEdited", function(cell){
         let id_rnc = cell.getRow().getData().id;
         let campo_editado = cell.getField();
         let novo_valor = cell.getValue();
 
         let csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-        if(!csrfInput) {
-            console.log("ERRO CRÍTICO: Token CSRF não encontrado no HTML!");
-            return;
-        }
+        if(!csrfInput) { console.log("ERRO CRÍTICO: Token CSRF não encontrado no HTML!"); return; }
         let csrfToken = csrfInput.value;
 
         fetch(`/qualidade/api/rncs/${id_rnc}/atualizar/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                campo: campo_editado,
-                valor: novo_valor
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ campo: campo_editado, valor: novo_valor })
         })
         .then(response => response.json())
         .then(data => {
-            if(data.status === 'sucesso'){
-                cell.getElement().style.backgroundColor = "#d1e7dd";
-            } else {
-                alert("O SERVIDOR RECUSOU: " + data.mensagem);
-                cell.restoreOldValue();
-            }
+            if(data.status === 'sucesso'){ cell.getElement().style.backgroundColor = "#d1e7dd"; }
+            else { alert("O SERVIDOR RECUSOU: " + data.mensagem); cell.restoreOldValue(); }
         })
-        .catch(error => {
-            console.log("ERRO DE REDE/FETCH: Não conseguiu falar com o servidor.");
-            cell.restoreOldValue();
-        });
+        .catch(error => { console.log("ERRO DE REDE/FETCH: Não conseguiu falar com o servidor."); cell.restoreOldValue(); });
     });
 
-    // BOTÃO DE EXPORTAÇÃO EXCEL
     document.getElementById("download-xlsx").addEventListener("click", function(){
         table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
     });
 
-    // SUBMIT: CRIAR NOVA RNC
     document.getElementById("formNovaRNC").addEventListener("submit", function(event){
         event.preventDefault();
-
         let formData = new FormData(this);
         let payload = Object.fromEntries(formData.entries());
         payload['responsaveis'] = formData.getAll('responsaveis');
         let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
         let btnSalvar = document.getElementById("btnSalvarNovaRNC");
         let textoOriginal = btnSalvar.innerHTML;
+
         btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
         btnSalvar.disabled = true;
 
         fetch("{% url 'api_criar_rnc' %}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
             if(data.status === 'sucesso'){
-                var modalEl = document.getElementById('modalNovaRNC');
-                var modalInstance = bootstrap.Modal.getInstance(modalEl);
-                modalInstance.hide();
+                bootstrap.Modal.getInstance(document.getElementById('modalNovaRNC')).hide();
                 document.getElementById('formNovaRNC').reset();
                 table.setData();
-            } else {
-                alert("O BACKEND RECUSOU A CRIAÇÃO:\n" + data.mensagem);
-            }
+            } else { alert("O BACKEND RECUSOU A CRIAÇÃO:\n" + data.mensagem); }
         })
-        .catch(error => {
-            console.error("Erro na requisição JS:", error);
-            alert("Erro de conexão com o servidor. Veja o Console (F12).");
-        })
-        .finally(() => {
-            btnSalvar.innerHTML = textoOriginal;
-            btnSalvar.disabled = false;
-        });
+        .catch(error => { console.error("Erro na requisição JS:", error); alert("Erro de conexão com o servidor. Veja o Console (F12)."); })
+        .finally(() => { btnSalvar.innerHTML = textoOriginal; btnSalvar.disabled = false; });
     });
 
-    // FUNÇÃO: ABRIR MODAL DE EDIÇÃO AVANÇADA
     window.abrirModalEdicao = function(dados) {
         document.getElementById('display_rnc_id').innerText = dados.id;
         document.getElementById('edit_rnc_id').value = dados.id;
         document.getElementById('edit_registrador_id').value = dados.registrador_id || "";
 
+        if(document.getElementById('edit_status')) document.getElementById('edit_status').value = dados.status_code || '';
+        if(document.getElementById('edit_categoria')) document.getElementById('edit_categoria').value = dados.categoria_code || '';
+        if(document.getElementById('edit_origem')) document.getElementById('edit_origem').value = dados.origem_code || '';
+        if(document.getElementById('edit_criticidade')) document.getElementById('edit_criticidade').value = dados.criticidade_code || '';
+        if(document.getElementById('edit_detector')) document.getElementById('edit_detector').value = dados.detector_code || '';
+
         document.getElementById('edit_data_encerramento').value = dados.data_encerramento ? dados.data_encerramento.replaceAll('/', '-') : '';
         document.getElementById('edit_data_prevista').value = dados.data_prevista_conclusao ? dados.data_prevista_conclusao.replaceAll('/', '-') : '';
         document.getElementById('edit_ishikawa_link').value = dados.ishikawa_link || '';
 
-        let selectResp = document.getElementById('edit_responsaveis');
         let idsResponsaveis = dados.responsaveis_ids || [];
-
         window.choicesResp.removeActiveItems();
-        if (idsResponsaveis.length > 0) {
-            window.choicesResp.setChoiceByValue(idsResponsaveis.map(String));
-        }
+        if (idsResponsaveis.length > 0) { window.choicesResp.setChoiceByValue(idsResponsaveis.map(String)); }
 
-        var modalEditar = new bootstrap.Modal(document.getElementById('modalEditarRNC'));
-        modalEditar.show();
+        new bootstrap.Modal(document.getElementById('modalEditarRNC')).show();
     };
 
-    // SUBMIT: SALVAR EDIÇÃO AVANÇADA
     document.getElementById("formEditarRNC").addEventListener("submit", function(event){
         event.preventDefault();
-
         let formData = new FormData(this);
         let rnc_id = document.getElementById('edit_rnc_id').value;
         let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
         let btnSalvar = document.getElementById("btnSalvarEdicaoRNC");
         let textoOriginal = btnSalvar.innerHTML;
+
         btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
         btnSalvar.disabled = true;
 
-        let url = `/qualidade/api/rncs/${rnc_id}/editar-avancado/`;
-
-        fetch(url, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrfToken },
-            body: formData
-        })
+        fetch(`/qualidade/api/rncs/${rnc_id}/editar-avancado/`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
         .then(response => response.json())
         .then(data => {
             if(data.status === 'sucesso'){
-                var modalEl = document.getElementById('modalEditarRNC');
-                var modalInstance = bootstrap.Modal.getInstance(modalEl);
-                modalInstance.hide();
+                bootstrap.Modal.getInstance(document.getElementById('modalEditarRNC')).hide();
                 document.getElementById('formEditarRNC').reset();
                 table.setData();
-            } else {
-                alert("O SERVIDOR RECUSOU A EDIÇÃO:\n" + data.mensagem);
-            }
+            } else { alert("O SERVIDOR RECUSOU A EDIÇÃO:\n" + data.mensagem); }
         })
-        .catch(error => {
-            console.error("Erro:", error);
-            alert("Erro de conexão. Verifique o console.");
-        })
-        .finally(() => {
-            btnSalvar.innerHTML = textoOriginal;
-            btnSalvar.disabled = false;
-        });
+        .catch(error => { console.error("Erro:", error); alert("Erro de conexão. Verifique o console."); })
+        .finally(() => { btnSalvar.innerHTML = textoOriginal; btnSalvar.disabled = false; });
     });
 
-    // FUNÇÃO: ABRIR GALERIA DE IMAGENS
     window.abrirGaleriaImagens = function(dados, tipo) {
         let containerGaleria = document.getElementById('galeria_content');
         containerGaleria.innerHTML = '';
-
-        let urls = [];
+        let urls = tipo === 'eficacia' ? (dados.eficacia_imagens_urls || []) : (dados.imagens_urls || []);
         let tituloModal = document.querySelector('#modalGaleriaImagens .modal-title');
 
-        if (tipo === 'eficacia') {
-            urls = dados.eficacia_imagens_urls || [];
-            tituloModal.innerHTML = '<i class="bi bi-shield-check me-2"></i>Evidências de Eficácia';
-        } else {
-            urls = dados.imagens_urls || [];
-            tituloModal.innerHTML = '<i class="bi bi-images me-2"></i>Evidências Fotográficas da Falha';
-        }
+        if (tipo === 'eficacia') { tituloModal.innerHTML = '<i class="bi bi-shield-check me-2"></i>Evidências de Eficácia'; }
+        else { tituloModal.innerHTML = '<i class="bi bi-images me-2"></i>Evidências Fotográficas da Falha'; }
 
         urls.forEach(url => {
-            let colHTML = `
+            containerGaleria.innerHTML += `
                 <div class="col-md-4">
                     <a href="${url}" target="_blank" title="Clique para abrir em tamanho real">
                         <img src="${url}" class="img-fluid img-thumbnail shadow-sm rounded-2" style="max-height: 200px; width: 100%; object-fit: cover;">
                     </a>
-                </div>
-            `;
-            containerGaleria.innerHTML += colHTML;
+                </div>`;
         });
-
-        // 3. MOSTRA A JANELA
-        var modalGaleria = new bootstrap.Modal(document.getElementById('modalGaleriaImagens'));
-        modalGaleria.show();
+        new bootstrap.Modal(document.getElementById('modalGaleriaImagens')).show();
     };
-
 });
 </script>
 {% endblock %}

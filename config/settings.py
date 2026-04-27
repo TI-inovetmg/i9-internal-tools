@@ -52,7 +52,9 @@ INSTALLED_APPS = [
     'financeiro',
     'engenharia',
     'pcp',
-    'qualidade'
+    'qualidade',
+    
+    'rest_framework'
 ]
 
 AUTH_USER_MODEL = 'usuarios.CustomUser'
