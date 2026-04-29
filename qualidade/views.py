@@ -96,90 +96,35 @@ def api_listar_rncs(request):
 
 @login_required(login_url='/login/')
 @require_POST
-@exige_permissao(['qualidade'])
 def api_atualizar_rnc(request, rnc_id):
+
     try:
         dados = json.loads(request.body)
         campo = dados.get('campo')
         valor = dados.get('valor')
 
-        campos_permitidos = [
-            'projeto_cod',
-            'elemento_rastreador',
-            'detector',
-            'categoria',
-            'origem',
-            'criticidade',
-            'status',
-            'equipamento',
-            'local',
-            'descricao',
-            'correcao',
-            'ishikawa_link',
-            'causas_principais',
-            'acao_corretiva',
-            'eficacia_texto',
-            'eficacia_pdf',
-            'responsaveis',
-            'data_encerramento',
-            'data_previsao_conclusao',
-            'versao',
-            'registrador'
+        is_sgq = request.user.pode_acessar_modulo('qualidade')
+
+        campos_sgq = [
+            'projeto_cod', 'elemento_rastreador', 'detector', 'categoria',
+            'origem', 'criticidade', 'status', 'equipamento', 'local',
+            'descricao', 'correcao', 'ishikawa_link', 'causas_principais',
+            'acao_corretiva', 'eficacia_texto', 'data_encerramento',
+            'data_prevista_conclusao', 'registrador'
         ]
 
-        # Se o utilizador tentar enviar um campo que não está na lista, bloqueamos com erro 403 (Forbidden)
-        if campo not in campos_permitidos:
-            return JsonResponse({'status': 'erro', 'mensagem': 'Edição deste campo não autorizada.'}, status=403)
+        campos_gerais = ['correcao', 'causas_principais', 'acao_corretiva', 'ishikawa_link', 'descricao', 'eficacia_texto']
 
-        # Se passou na segurança, delegamos a inteligência para o Service
+        permitidos = campos_sgq if is_sgq else campos_gerais
+
+        if campo not in permitidos:
+            return JsonResponse({'status': 'erro', 'mensagem': 'Edição deste campo não autorizada para o seu perfil.'}, status=403)
+
         RNCService.atualizar_rnc(rnc_id, campo, valor)
         return JsonResponse({'status': 'sucesso'})
 
-    except RNC.DoesNotExist:
-        return JsonResponse({'status': 'erro', 'mensagem': 'RNC não encontrada.'}, status=404)
-
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'erro', 'mensagem': 'Dados inválidos.'}, status=400)
-
     except Exception as e:
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
-
-
-@login_required(login_url='/login/')
-@require_POST
-def api_criar_rnc(request):
-    try:
-        dados = json.loads(request.body)
-
-        local = get_object_or_404(Local, id=dados.get('local_id'))
-        equipamento_id = dados.get('equipamento_id')
-        equipamento = get_object_or_404(Equipamento, id=equipamento_id) if equipamento_id else None
-
-        registrador_id = dados.get('registrador_id')
-        registrador_obj = User.objects.get(id=registrador_id) if registrador_id else request.user
-
-        nova_rnc = RNC.objects.create(
-            registrador=registrador_obj,
-            local=local,
-            equipamento=equipamento,
-            detector=dados.get('detector'),
-            categoria=dados.get('categoria'),
-            origem=dados.get('origem'),
-            criticidade=dados.get('criticidade'),
-            descricao=dados.get('descricao'),
-            status = 'PR'
-        )
-
-        responsaveis_ids = dados.get('responsaveis', [])
-
-        if responsaveis_ids:
-            nova_rnc.responsaveis.set(responsaveis_ids)
-            RNCService.notificar_nova_rnc(nova_rnc.id, responsaveis_ids)
-
-        return JsonResponse({'status': 'sucesso', 'rnc_id': nova_rnc.id})
-
-    except Exception as e:
-        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
 
 
 @login_required(login_url='/login/')
@@ -209,50 +154,42 @@ def api_criar_rnc(request):
 
 @login_required(login_url='/login/')
 @api_view(['POST'])
-@exige_permissao(['qualidade'])
 def api_editar_rnc_avancado(request, rnc_id):
     rnc = get_object_or_404(RNC, id=rnc_id)
+    is_sgq = request.user.pode_acessar_modulo('qualidade')
 
-    # 2. Guardamos as datas antigas para a lógica de e-mail (Mantemos sua regra de negócio)
     data_antiga = rnc.data_encerramento
     data_previsao = rnc.data_prevista_conclusao
 
-    # 3. A Mágica do DRF: O Serializer faz o parse das datas, valida as siglas (Choices) e os arquivos!
-    # O "partial=True" diz ao DRF: "Atualize apenas os campos que vierem no request, não exija todos".
-    serializer = RNCSerializer(instance=rnc, data=request.data, partial=True)
+    dados = request.data.copy()
+
+    if not is_sgq:
+        campos_proibidos = [
+            'status', 'categoria', 'origem', 'criticidade', 'detector',
+            'local', 'equipamento', 'data_encerramento', 'data_prevista_conclusao', 'descricao'
+        ]
+        for campo in campos_proibidos:
+            dados.pop(campo, None)
+
+    serializer = RNCSerializer(instance=rnc, data=request.dados, partial=True)
 
     if serializer.is_valid():
-        # Se os dados estiverem perfeitos, salva no banco.
         rnc_atualizada = serializer.save()
-
-        # ==========================================
-        # SEU DESAFIO AQUI (Complete o código):
-        # O Serializer já salvou os responsáveis, o Ishikawa, os status, categoria, datas e o PDF principal!
-        # Mas você ainda precisa lidar com as tabelas filhas (Imagens extras e Imagens de Eficácia).
-        # Como você extrairia os arquivos MÚLTIPLOS de request.FILES e salvaria nas tabelas
-        # RNCImagem e RNCEficaciaImagem usando o objeto 'rnc_atualizada'?
-        # DICA: No DRF, você não usa request.FILES, você pode usar request.FILES.getlist('imagens')
-        # ==========================================
 
         imagens = request.FILES.getlist('imagens')
         for img in imagens:
-            # Para cada arquivo, criamos uma nova linha na tabela RNCImagem
             RNCImagem.objects.create(rnc=rnc_atualizada, imagem=img)
 
         imagens_eficacia = request.FILES.getlist('imagens_eficacia')
         for img in imagens_eficacia:
-            # Para cada arquivo, criamos uma nova linha na tabela RNCEficaciaImagem
             RNCEficaciaImagem.objects.create(rnc=rnc_atualizada, imagens_eficacia=img)
 
-        # Gatilho de e-mails (Mantemos sua regra)
         if rnc_atualizada.data_encerramento and rnc_atualizada.data_encerramento != data_antiga:
             RNCService._notificar_data_encerramento(rnc_atualizada.id)
 
         if rnc_atualizada.data_prevista_conclusao and rnc_atualizada.data_prevista_conclusao != data_previsao:
             RNCService._notificar_data_previsao(rnc_atualizada.id)
 
-        # O DRF usa 'Response' ao invés de 'JsonResponse'
         return Response({'status': 'sucesso'})
     else:
-        # Se alguém mandar uma sigla errada ou data num formato bizarro, o DRF te diz EXATAMENTE o campo que falhou!
         return Response({'status': 'erro', 'mensagem': serializer.errors}, status=400)

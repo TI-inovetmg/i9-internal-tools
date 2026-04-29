@@ -1,0 +1,386 @@
+// rnc_dashboard.js
+// Padrão de Arquitetura: IIFE (Immediately Invoked Function Expression) para não poluir o escopo global.
+
+const RNCDashboard = (function() {
+    // ESTADO PRIVADO DO MÓDULO
+    let table = null;
+    let choicesResp = null;
+    const CONFIG = window.RNC_CONFIG;
+
+    // FUNÇÕES UTILITÁRIAS
+    const util = {
+        formatarDataBR: function(cell){
+            let val = cell.getValue();
+            if (!val) return "-";
+            val = String(val).replace(/\//g, '-');
+            if(val.includes('-')){
+                let parts = val.split('-');
+                if(parts[0].length === 4) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return val;
+        },
+        formatarDataExcel: function(value, data, type, params, column){
+            if (!value) return "";
+            let val = String(value).replace(/\//g, '-');
+            if(val.includes('-')){
+                let parts = val.split('-');
+                if(parts[0].length === 4) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return val;
+        },
+        filtroMultiploExato: function(headerValue, rowValue, rowData, filterParams) {
+            if (!headerValue) return true;
+            if (!rowValue) return false;
+            let termos = headerValue.split(',').map(t => t.trim().toLowerCase()).filter(t => t !== "");
+            let valorCelula = String(rowValue).toLowerCase();
+            return termos.some(termo => valorCelula === termo);
+        },
+        filtroDataBR: function(headerValue, rowValue){
+            if(!headerValue) return true;
+            if(!rowValue) return false;
+            const formatado = util.formatarDataBR({getValue:()=>rowValue});
+            return formatado.includes(headerValue.trim());
+        }
+    };
+
+    // MÉTODOS DE INICIALIZAÇÃO
+    const initChoices = function() {
+        if(document.getElementById('edit_responsaveis')){
+            choicesResp = new Choices('#edit_responsaveis', {
+                removeItemButton: true,
+                searchEnable: true,
+                placeholderValue: 'Selecione os responsáveis...',
+                searchPlaceholderValue: 'Pesquisar...',
+                itemSelectText: '',
+                noResultsText: 'Nenhum usuário encontrado',
+            });
+        }
+    };
+
+    const initTabulator = function() {
+        table = new Tabulator("#tabela-rnc", {
+            ajaxURL: CONFIG.urls.listar,
+            layout: "fitData",
+            responsiveLayout: "collapse",
+            pagination: "local",
+            paginationSize: 15,
+            initialSort: [{column: "id", dir: "desc"}],
+            resizableColumns: true,
+            movableColumns: true,
+
+            columns: [
+                {
+                    title: "Ações", field: "acoes", visible: CONFIG.isSGQ, download: false, hozAlign: "center",
+                    formatter: function(cell){
+                        return `<button type="button" class="btn btn-sm btn-primary py-0 btn-editar-rnc" title="Editar RNC completo">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </button>`;
+                    },
+                    cellClick: function(e, cell){
+                        let dadosDaLinha = cell.getRow().getData();
+                        ui.abrirModalEdicao(dadosDaLinha);
+                    }
+                },
+                {title: "ID", field: "id", sorter: "number", headerFilter: "input", headerFilterFunc: util.filtroMultiploExato, frozen: false},
+                {title: "Status", field: "status",
+                 headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+                 editor: "list", editable: function(cell){ return CONFIG.isSGQ; },
+                 editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Registro preliminar", "Cancelado"]},
+                 formatter: function(cell) {
+                     let val = cell.getValue();
+                     let color = "secondary";
+                     if(val === "Em andamento") color = "primary";
+                     if(val === "Concluído") color = "success";
+                     if(val === "Fora dos trilhos") color = "danger";
+                     if(val === "Registro preliminar") color = "warning text-dark";
+                     return `<span class="badge bg-${color} w-100">${val}</span>`;
+                 }
+                },
+                {title: "Registrador", field: "registrador", headerFilter: "list", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+                {title: "Detector", field: "detector",
+                 headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+                 editor: "list", editable: function(cell){ return CONFIG.isSGQ; },
+                 editorParams: {values: ["Cliente", "Interno", "Auditor Interno", "Auditor Externo", "Fornecedor"]}
+                },
+                {title: "Data Abertura", field: "data_abertura", accessorDownload: util.formatarDataExcel, headerFilter: "input", headerFilterFunc: util.filtroDataBR, formatter: util.formatarDataBR},
+                {title: "Projeto", field: "projeto_cod",
+                 headerFilter: "input", editor: "input", editable: function(cell){ return CONFIG.isSGQ; },
+                 headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+                     if (!headerValue) return true;
+                     if (!rowValue) return false;
+                     let termos = headerValue.split(',').map(termo => termo.trim().toLowerCase()).filter(termo => termo !== "");
+                     let valorCelula = String(rowValue).toLowerCase();
+                     return termos.some(termo => valorCelula.includes(termo));
+                 }
+                },
+                {title: "Equipamento", field: "equipamento", headerFilter: "input", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+                {title: "Elemento Rastreador", field: "elemento_rastreador", headerFilter: "input", editor: "input", editable: function(cell){ return CONFIG.isSGQ; }},
+                {title: "Local Detecção", field: "local", headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
+                {title: "Origem", field: "origem",
+                    headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
+                    formatter: "lookup", formatterParams: {
+                        "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral"
+                    },
+                    editor: "list", editable: function(cell){ return CONFIG.isSGQ; },
+                    editorParams: {
+                        values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral" }
+                    }
+                },
+                {title: "Categoria", field: "categoria",
+                    headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
+                    formatter: "lookup", formatterParams: {
+                        "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema"
+                    },
+                    editor: "list", editable: function(cell){ return CONFIG.isSGQ; },
+                    editorParams: {
+                        values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema" }
+                    }
+                },
+                {title: "Criticidade", field: "criticidade",
+                    headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
+                    editor: "list", editable: function(cell){ return CONFIG.isSGQ; }, editorParams: {values: ["Alto", "Médio", "Baixo"]}
+                },
+                {title: "Imagem NC", field: "qtd_imagens", hozAlign: "center", formatter: function(cell){
+                    let qtd = cell.getValue();
+                    if(qtd > 0) {
+                        return `<button type="button" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;">
+                                    <i class="bi bi-image"></i> (${qtd})
+                                </button>`;
+                    }
+                    return "-";
+                }, cellClick: function(e, cell){
+                    let dados = cell.getRow().getData();
+                    if(dados.qtd_imagens > 0){ ui.abrirGaleriaImagens(dados, 'padrao'); }
+                }},
+                {title: "Descrição da não conformidade", field: "descricao", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
+                {title: "Correção Imediata", field: "correcao", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
+                {title: "Causas Principais", field: "causas_principais", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
+                {title: "Ação Corretiva", field: "acao_corretiva", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
+                {title: "Eficácia (Texto)", field: "eficacia_texto", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
+                {title: "Responsavel", field: "responsaveis",
+                headerFilter: "list",
+                    headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
+                        if (!headerValue || headerValue.length === 0) return true;
+                        if (!rowValue) return false;
+                        let textoCelula = String(rowValue);
+                        return headerValue.some(nomeSelecionado => textoCelula.includes(nomeSelecionado));
+                    },
+                    headerFilterParams: { values: CONFIG.dadosSistema.listaTodosUsuarios, valuesLookup: true, clearable: true, multiselect: true }
+                },
+                {title: "Data Previsão Conclusão", field: "data_prevista_conclusao", accessorDownload: util.formatarDataExcel, headerFilter: "input", headerFilterFunc: util.filtroDataBR, formatter: util.formatarDataBR, editor: "date", editable: function(cell){ return CONFIG.isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
+                {title: "Data Encerramento", field: "data_encerramento", accessorDownload: util.formatarDataExcel, headerFilter: "input", headerFilterFunc: util.filtroDataBR, formatter: util.formatarDataBR, editor: "date", editable: function(cell){ return CONFIG.isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
+                {title: "Ishikawa", field: "ishikawa_link", editable: true, formatter: function(cell){
+                let url = cell.getValue();
+                if(url) return `<a href="${url}" target="_blank" class="text-primary text-decoration-none">Acessar</a>`;
+                return "-";
+                }},
+                {title: "Evidência Eficácia PDF", download: false, field: "eficacia_pdf", formatter: function(cell){
+                    let url = cell.getValue();
+                    if(url) return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.75rem;"><i class="bi bi-file-pdf"></i> PDF</a>`;
+                    return "-";
+                }},
+                {title: "Evidência Eficácia (Img)", download: false, field: "qtd_imagens_eficacia", hozAlign: "center", formatter: function(cell){
+                    let qtd = cell.getValue();
+                    if(qtd > 0) {
+                        return `<button type="button" class="btn btn-sm btn-outline-success py-0" style="font-size: 0.75rem;">
+                                    <i class="bi bi-shield-check"></i> (${qtd})
+                                </button>`;
+                    }
+                    return "-";
+                }, cellClick: function(e, cell){
+                    let dados = cell.getRow().getData();
+                    if(dados.qtd_imagens_eficacia > 0){ ui.abrirGaleriaImagens(dados, 'eficacia'); }
+                }},
+            ],
+            locale: "pt-br",
+            langs: {
+                "pt-br": { pagination: { first: "Primeira", last: "Última", prev: "Anterior", next: "Próxima" } }
+            }
+        });
+
+        table.on("cellEdited", api.atualizarInline);
+    };
+
+    //CAMADA DE API (FETCH)
+    const api = {
+        atualizarInline: function (cell) {
+            let id_rnc = cell.getRow().getData().id;
+            let campo_editado = cell.getField();
+            let novo_valor = cell.getValue();
+
+            fetch(`${CONFIG.urls.atualizarInlineBase}${id_rnc}/atualizar/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': CONFIG.tokens.csrf},
+                body: JSON.stringify({campo: campo_editado, valor: novo_valor})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') cell.getElement().style.backgroundColor = "#d1e7dd";
+                else {
+                    alert("O SERVIDOR RECUSOU: " + data.mensagem);
+                    cell.restoreOldValue();
+                }
+            })
+            .catch(error => {
+                console.log("ERRO DE REDE.");
+                cell.restoreOldValue();
+            });
+        },
+
+        criarRNC: function (payload, btnSalvar, textoOriginalModal, formElement) {
+            fetch(CONFIG.urls.criar, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': CONFIG.tokens.csrf},
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    bootstrap.Modal.getInstance(document.getElementById('modalNovaRNC')).hide();
+                    formElement.reset();
+                    table.setData();
+                } else {
+                    alert("O BACKEND RECUSOU A CRIAÇÃO:\n" + JSON.stringify(data.mensagem));
+                }
+            })
+            .catch(error => {
+                alert("Erro de conexão com o servidor. Veja o Console (F12).");
+            })
+            .finally(() => {
+                btnSalvar.innerHTML = textoOriginalModal;
+                btnSalvar.disabled = false;
+            });
+        }, // <--- A VÍRGULA QUE FALTAVA
+
+        editarRNCAvancado: function (formData, rncId, btnSalvar, textoOriginal, formElement) {
+            let url = CONFIG.urls.editarAvancadoBase + rncId + '/editar-avancado/';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CONFIG.tokens.csrf
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    bootstrap.Modal.getInstance(document.getElementById('modalEditarRNC')).hide();
+                    formElement.reset();
+                    table.setData();
+                } else {
+                    alert("ERRO: \n" + JSON.stringify(data.mensagem));
+                }
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+                alert("Erro de conexão com o servidor.");
+            })
+            .finally(() => {
+                btnSalvar.innerHTML = textoOriginal;
+                btnSalvar.disabled = false;
+            });
+        }
+    };
+
+    // INTERFACE DE USUÁRIO (Modais)
+    const ui = {
+        abrirModalEdicao: function(dados) {
+            document.getElementById('display_rnc_id').innerText = dados.id;
+            document.getElementById('edit_rnc_id').value = dados.id;
+            document.getElementById('edit_registrador_id').value = dados.registrador_id || "";
+
+            if(document.getElementById('edit_status')) document.getElementById('edit_status').value = dados.status_code || '';
+            if(document.getElementById('edit_categoria')) document.getElementById('edit_categoria').value = dados.categoria_code || '';
+            if(document.getElementById('edit_origem')) document.getElementById('edit_origem').value = dados.origem_code || '';
+            if(document.getElementById('edit_criticidade')) document.getElementById('edit_criticidade').value = dados.criticidade_code || '';
+            if(document.getElementById('edit_detector')) document.getElementById('edit_detector').value = dados.detector_code || '';
+            if(document.getElementById('edit_local_id')) document.getElementById('edit_local_id').value = dados.local_id || '';
+            if(document.getElementById('edit_equipamento_id')) document.getElementById('edit_equipamento_id').value = dados.equipamento_id || '';
+
+            document.getElementById('edit_data_encerramento').value = dados.data_encerramento ? dados.data_encerramento.replaceAll('/', '-') : '';
+            document.getElementById('edit_data_prevista').value = dados.data_prevista_conclusao ? dados.data_prevista_conclusao.replaceAll('/', '-') : '';
+            document.getElementById('edit_ishikawa_link').value = dados.ishikawa_link || '';
+
+            let idsResponsaveis = dados.responsaveis_ids || [];
+            if (choicesResp) {
+                choicesResp.removeActiveItems();
+                if (idsResponsaveis.length > 0) choicesResp.setChoiceByValue(idsResponsaveis.map(String));
+            }
+
+            new bootstrap.Modal(document.getElementById('modalEditarRNC')).show();
+        },
+
+        abrirGaleriaImagens: function(dados, tipo) {
+            let containerGaleria = document.getElementById('galeria_content');
+            containerGaleria.innerHTML = '';
+            let urls = tipo === 'eficacia' ? (dados.eficacia_imagens_urls || []) : (dados.imagens_urls || []);
+            let tituloModal = document.querySelector('#modalGaleriaImagens .modal-title');
+
+            if (tipo === 'eficacia') { tituloModal.innerHTML = '<i class="bi bi-shield-check me-2"></i>Evidências de Eficácia'; }
+            else { tituloModal.innerHTML = '<i class="bi bi-images me-2"></i>Evidências Fotográficas da Falha'; }
+
+            urls.forEach(url => {
+                containerGaleria.innerHTML += `
+                    <div class="col-md-4">
+                        <a href="${url}" target="_blank">
+                            <img src="${url}" class="img-fluid img-thumbnail shadow-sm rounded-2" style="max-height: 200px; width: 100%; object-fit: cover;">
+                        </a>
+                    </div>`;
+            });
+            new bootstrap.Modal(document.getElementById('modalGaleriaImagens')).show();
+        }
+    };
+
+    // INICIALIZADOR PÚBLICO
+    return {
+        init: function() {
+            if(!CONFIG) {
+                console.error("Configurações não encontradas.");
+                return;
+            }
+            initChoices();
+            initTabulator();
+
+            let btnExportar = document.getElementById("download-xlsx");
+            if(btnExportar) btnExportar.addEventListener("click", () => table.download("xlsx", "Controle_RNCs.xlsx", {sheetName:"RNCs"}));
+
+            // Evento: Nova RNC
+            let formNovaRNC = document.getElementById("formNovaRNC");
+            if (formNovaRNC) {
+                formNovaRNC.addEventListener("submit", function(event) {
+                    event.preventDefault();
+                    let formData = new FormData(this);
+                    let payload = Object.fromEntries(formData.entries());
+                    payload['responsaveis'] = formData.getAll('responsaveis');
+
+                    let btnSalvar = document.getElementById("btnSalvarNovaRNC");
+                    let textoOriginal = btnSalvar.innerHTML;
+                    btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+                    btnSalvar.disabled = true;
+
+                    api.criarRNC(payload, btnSalvar, textoOriginal, this);
+                });
+            }
+
+            let formEditar = document.getElementById("formEditarRNC");
+            if (formEditar) {
+                formEditar.addEventListener("submit", function(event) {
+                    event.preventDefault();
+                    let formData = new FormData(this);
+                    let rncId = document.getElementById('edit_rnc_id').value;
+
+                    let btnSalvar = document.getElementById("btnSalvarEdicaoRNC");
+                    let textoOriginal = btnSalvar.innerHTML;
+                    btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+                    btnSalvar.disabled = true;
+
+                    api.editarRNCAvancado(formData, rncId, btnSalvar, textoOriginal, this);
+                });
+            }
+
+        }
+    };
+})();
+
+document.addEventListener('DOMContentLoaded', RNCDashboard.init);

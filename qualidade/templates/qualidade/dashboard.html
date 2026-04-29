@@ -18,13 +18,8 @@
     .tabulator-row:nth-child(even) { background-color: #fcfcfc !important; }
     .tabulator-row:hover { background-color: #f1f3f5 !important; }
 
-    .tabulator-header .tabulator-col[tabulator-field="status"],
-    .tabulator-header .tabulator-col[tabulator-field="detector"],
-    .tabulator-header .tabulator-col[tabulator-field="projeto_cod"],
-    .tabulator-header .tabulator-col[tabulator-field="elemento_rastreador"],
-    .tabulator-header .tabulator-col[tabulator-field="categoria"],
-    .tabulator-header .tabulator-col[tabulator-field="origem"],
-    .tabulator-header .tabulator-col[tabulator-field="criticidade"],
+
+    
     .tabulator-header .tabulator-col[tabulator-field="descricao"],
     .tabulator-header .tabulator-col[tabulator-field="correcao"],
     .tabulator-header .tabulator-col[tabulator-field="causas_principais"],
@@ -207,7 +202,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-primary">Data Finalização Prevista</label>
-                            <input type="date" id="edit_data_prevista" name="data_prevista" class="form-control shadow-sm">
+                            <input type="date" id="edit_data_prevista" name="data_prevista_conclusao" class="form-control shadow-sm">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-primary">Diagrama de Ishikawa (Link URL)</label>
@@ -317,6 +312,24 @@
                                 <option value="GR">Geral</option>
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Local/Setor</label>
+                            <select id="edit_local_id" name="local" class="form-select shadow-sm" required>
+                                <option value="">Selecione...</option>
+                                {% for local in locais %}
+                                    <option value="{{ local.id }}">{{ local.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">Equipamento</label>
+                            <select id="edit_equipamento_id" name="equipamento" class="form-select shadow-sm">
+                                <option value="">Nenhum / Não se aplica</option>
+                                {% for eqp in equipamentos %}
+                                    <option value="{{ eqp.id }}">{{ eqp.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -348,329 +361,26 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var isSGQ= "{{is_sgq|yesno:'true,false'}}" === "true";
-    var listaTodosUsuarios = [{% for user in usuarios %} "{{ user.get_full_name|default:user.username }}", {% endfor %}];
-
-    window.choicesResp = new Choices('#edit_responsaveis', {
-        removeItemButton: true,
-        searchEnable: true,
-        placeholderValue: 'Selecione os responsáveis...',
-        searchPlaceholderValue: 'Pesquisar...',
-        itemSelectText: '',
-        noResultsText: 'Nenhum usuário encontrado',
-    })
-
-    var formatarDataBR = function(cell){
-        let val = cell.getValue();
-        if (!val) return "-";
-        val = String(val).replace(/\//g, '-');
-        if(val.includes('-')){
-            let parts = val.split('-');
-            if(parts[0].length === 4){ return `${parts[2]}/${parts[1]}/${parts[0]}`; }
+    window.RNC_CONFIG = {
+        isSGQ: "{{ is_sgq|yesno:'true,false' }}" === "true",
+        urls: {
+            listar: "{% url 'api_listar_rncs' %}",
+            criar: "{% url 'api_criar_rnc' %}",
+            editarAvancadoBase: "/qualidade/api/rncs/",
+            atualizarInlineBase: "/qualidade/api/rncs/"
+        },
+        dadosSistema: {
+            listaTodosUsuarios: [
+                {% for user in usuarios %}
+                    "{{ user.get_full_name|default:user.username }}",
+                {% endfor %}
+            ]
+        },
+        tokens: {
+            csrf: document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : ''
         }
-        return val;
     };
-
-    var formatarDataExcel = function(value, data, type, params, column){
-        if (!value) return "";
-        let val = String(value).replace(/\//g, '-');
-        if(val.includes('-')){
-            let parts = val.split('-');
-            if(parts[0].length === 4){ return `${parts[2]}/${parts[1]}/${parts[0]}`; }
-        }
-        return val;
-    };
-
-    var filtroMultiploTexto = function(headerValue, rowValue, rowData, filterParams) {
-        if (!headerValue) return true;
-        if (!rowValue) return false;
-        let termos = headerValue.split(',').map(t => t.trim().toLowerCase()).filter(t => t !== "");
-        let valorCelula = String(rowValue).toLowerCase();
-        return termos.some(termo => valorCelula.includes(termo));
-    };
-
-    var filtroMultiploExato = function(headerValue, rowValue, rowData, filterParams) {
-        if (!headerValue) return true;
-        if (!rowValue) return false;
-        let termos = headerValue.split(',').map(t => t.trim().toLowerCase()).filter(t => t !== "");
-        let valorCelula = String(rowValue).toLowerCase();
-        return termos.some(termo => valorCelula === termo);
-    };
-
-    var table = new Tabulator("#tabela-rnc", {
-        ajaxURL: "{% url 'api_listar_rncs' %}",
-        layout: "fitData",
-        responsiveLayout: "collapse",
-        pagination: "local",
-        paginationSize: 15,
-        initialSort: [{column: "id", dir: "desc"}],
-        resizableColumns: true,
-        movableColumns: true,
-
-        columns: [
-            {title: "Ações", field: "acoes", visible: isSGQ, download: false, hozAlign: "center", formatter: function(cell){
-                return `<button type="button" class="btn btn-sm btn-primary py-0 btn-editar-rnc" title="Editar RNC completo">
-                            <i class="bi bi-pencil-square"></i> Editar
-                        </button>`;
-            }, cellClick: function(e, cell){
-                let dadosDaLinha = cell.getRow().getData();
-                abrirModalEdicao(dadosDaLinha);
-            }},
-
-            {title: "ID", field: "id", sorter: "number", headerFilter: "input", headerFilterFunc: filtroMultiploExato, frozen: false},
-
-            {title: "Status", field: "status",
-             headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-             editor: "list", editable: function(cell){ return isSGQ; },
-             editorParams: {values: ["Não iniciada", "Em andamento", "Concluído", "Registro preliminar", "Cancelado"]},
-             formatter: function(cell) {
-                 let val = cell.getValue();
-                 let color = "secondary";
-                 if(val === "Em andamento") color = "primary";
-                 if(val === "Concluído") color = "success";
-                 if(val === "Fora dos trilhos") color = "danger";
-                 if(val === "Registro preliminar") color = "warning text-dark";
-                 return `<span class="badge bg-${color} w-100">${val}</span>`;
-             }
-            },
-
-            {title: "Registrador", field: "registrador", headerFilter: "list", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
-
-            {title: "Detector", field: "detector",
-             headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-             editor: "list", editable: function(cell){ return isSGQ; },
-             editorParams: {values: ["Cliente", "Interno", "Auditor Interno", "Auditor Externo", "Fornecedor"]}
-            },
-
-            {title: "Data Abertura", field: "data_abertura", accessorDownload: formatarDataExcel, headerFilter: "input", headerFilterFunc: filtroMultiploTexto, formatter: formatarDataBR},
-
-            {title: "Projeto", field: "projeto_cod",
-             headerFilter: "input", editor: "input", editable: function(cell){ return isSGQ; },
-             headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-                 if (!headerValue) return true;
-                 if (!rowValue) return false;
-                 let termos = headerValue.split(',').map(termo => termo.trim().toLowerCase()).filter(termo => termo !== "");
-                 let valorCelula = String(rowValue).toLowerCase();
-                 return termos.some(termo => valorCelula.includes(termo));
-             }
-            },
-
-            {title: "Equipamento", field: "equipamento", headerFilter: "input", headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
-
-            {title: "Elemento Rastreador", field: "elemento_rastreador", headerFilter: "input", editor: "input", editable: function(cell){ return isSGQ; }},
-
-            {title: "Local Detecção", field: "local", headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true} },
-
-            {title: "Origem", field: "origem",
-                headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
-                formatter: "lookup", formatterParams: {
-                    "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral"
-                },
-                editor: "list", editable: function(cell){ return isSGQ; },
-                editorParams: {
-                    values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "FA": "Fabricação", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "RH": "RH", "FO": "Fornecedor", "SG": "Processo Interno SGQ", "GR": "Geral" }
-                }
-            },
-
-            {title: "Categoria", field: "categoria",
-                headerFilter: 'list', headerFilterFunc: 'in', headerFilterParams: {valuesLookup: true, clearable: true, multiselect: true},
-                formatter: "lookup", formatterParams: {
-                    "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema"
-                },
-                editor: "list", editable: function(cell){ return isSGQ; },
-                editorParams: {
-                    values: { "CO": "Comercial", "PE": "Projeto / Engenharia", "PC": "PCP", "FA": "Fabricação", "MO": "Obra / Montagem", "MC": "Montagem / Comissionamento", "SU": "Suprimentos", "FO": "Fornecedor Externo", "EX": "Recebimento / Expedição", "QU": "Qualidade", "RH": "Recursos Humanos", "FI": "Financeiro", "SG": "SGQ", "PJ": "Planejamento / Cronograma", "PR": "Processo", "RC": "Requisitos contratuais", "RN": "Requisitos normas", "SI": "Sistema" }
-                }
-            },
-
-            {title: "Criticidade", field: "criticidade",
-                headerFilter: "list", headerFilterFunc: "in", headerFilterParams: {valuesLookup:true, clearable:true, multiselect:true},
-                editor: "list", editable: function(cell){ return isSGQ; }, editorParams: {values: ["Alto", "Médio", "Baixo"]}
-            },
-
-            {title: "Imagem NC", field: "qtd_imagens", hozAlign: "center", formatter: function(cell){
-                let qtd = cell.getValue();
-                if(qtd > 0) {
-                    return `<button type="button" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;">
-                                <i class="bi bi-image"></i> (${qtd})
-                            </button>`;
-                }
-                return "-";
-            }, cellClick: function(e, cell){
-                let dados = cell.getRow().getData();
-                if(dados.qtd_imagens > 0){ abrirGaleriaImagens(dados, 'padrao'); }
-            }},
-
-            {title: "Descrição da não conformidade", field: "descricao", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
-            {title: "Correção Imediata", field: "correcao", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
-            {title: "Causas Principais", field: "causas_principais", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
-            {title: "Ação Corretiva", field: "acao_corretiva", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
-            {title: "Eficácia (Texto)", field: "eficacia_texto", formatter: "textarea", editor: "textarea", editable: function(cell){ return isSGQ; }},
-
-            {title: "Responsavel", field: "responsaveis",
-                headerFilter: "list",
-                headerFilterFunc: function(headerValue, rowValue, rowData, filterParams) {
-                    if (!headerValue || headerValue.length === 0) return true;
-                    if (!rowValue) return false;
-                    let textoCelula = String(rowValue);
-                    return headerValue.some(nomeSelecionado => textoCelula.includes(nomeSelecionado));
-                },
-                headerFilterParams: { values: listaTodosUsuarios, clearable: true, multiselect: true }
-            },
-
-            {title: "Data Previsão Conclusão", field: "data_prevista_conclusao", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editable: function(cell){ return isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
-            {title: "Data Encerramento", field: "data_encerramento", accessorDownload: formatarDataExcel, formatter: formatarDataBR, editor: "date", editable: function(cell){ return isSGQ; }, editorParams:{ format:"yyyy-MM-dd" }},
-
-            {title: "Ishikawa", field: "ishikawa_link", formatter: function(cell){
-                let url = cell.getValue();
-                if(url) return `<a href="${url}" target="_blank" class="text-primary text-decoration-none">Acessar</a>`;
-                return "-";
-            }},
-            {title: "Evidência Eficácia PDF", download: false, field: "eficacia_pdf", formatter: function(cell){
-                let url = cell.getValue();
-                if(url) return `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.75rem;"><i class="bi bi-file-pdf"></i> PDF</a>`;
-                return "-";
-            }},
-            {title: "Evidência Eficácia (Img)", download: false, field: "qtd_imagens_eficacia", hozAlign: "center", formatter: function(cell){
-                let qtd = cell.getValue();
-                if(qtd > 0) {
-                    return `<button type="button" class="btn btn-sm btn-outline-success py-0" style="font-size: 0.75rem;">
-                                <i class="bi bi-shield-check"></i> (${qtd})
-                            </button>`;
-                }
-                return "-";
-            }, cellClick: function(e, cell){
-                let dados = cell.getRow().getData();
-                if(dados.qtd_imagens_eficacia > 0){ abrirGaleriaImagens(dados, 'eficacia'); }
-            }},
-        ],
-        locale: "pt-br",
-        langs: {
-            "pt-br": { pagination: { first: "Primeira", last: "Última", prev: "Anterior", next: "Próxima" } }
-        }
-    });
-
-    table.on("cellEdited", function(cell){
-        let id_rnc = cell.getRow().getData().id;
-        let campo_editado = cell.getField();
-        let novo_valor = cell.getValue();
-
-        let csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-        if(!csrfInput) { console.log("ERRO CRÍTICO: Token CSRF não encontrado no HTML!"); return; }
-        let csrfToken = csrfInput.value;
-
-        fetch(`/qualidade/api/rncs/${id_rnc}/atualizar/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({ campo: campo_editado, valor: novo_valor })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'sucesso'){ cell.getElement().style.backgroundColor = "#d1e7dd"; }
-            else { alert("O SERVIDOR RECUSOU: " + data.mensagem); cell.restoreOldValue(); }
-        })
-        .catch(error => { console.log("ERRO DE REDE/FETCH: Não conseguiu falar com o servidor."); cell.restoreOldValue(); });
-    });
-
-    document.getElementById("download-xlsx").addEventListener("click", function(){
-        table.download("xlsx", "Controle_RNCs_I9TMG.xlsx", {sheetName:"RNCs"});
-    });
-
-    document.getElementById("formNovaRNC").addEventListener("submit", function(event){
-        event.preventDefault();
-        let formData = new FormData(this);
-        let payload = Object.fromEntries(formData.entries());
-        payload['responsaveis'] = formData.getAll('responsaveis');
-        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        let btnSalvar = document.getElementById("btnSalvarNovaRNC");
-        let textoOriginal = btnSalvar.innerHTML;
-
-        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
-        btnSalvar.disabled = true;
-
-        fetch("{% url 'api_criar_rnc' %}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'sucesso'){
-                bootstrap.Modal.getInstance(document.getElementById('modalNovaRNC')).hide();
-                document.getElementById('formNovaRNC').reset();
-                table.setData();
-            } else { alert("O BACKEND RECUSOU A CRIAÇÃO:\n" + data.mensagem); }
-        })
-        .catch(error => { console.error("Erro na requisição JS:", error); alert("Erro de conexão com o servidor. Veja o Console (F12)."); })
-        .finally(() => { btnSalvar.innerHTML = textoOriginal; btnSalvar.disabled = false; });
-    });
-
-    window.abrirModalEdicao = function(dados) {
-        document.getElementById('display_rnc_id').innerText = dados.id;
-        document.getElementById('edit_rnc_id').value = dados.id;
-        document.getElementById('edit_registrador_id').value = dados.registrador_id || "";
-
-        if(document.getElementById('edit_status')) document.getElementById('edit_status').value = dados.status_code || '';
-        if(document.getElementById('edit_categoria')) document.getElementById('edit_categoria').value = dados.categoria_code || '';
-        if(document.getElementById('edit_origem')) document.getElementById('edit_origem').value = dados.origem_code || '';
-        if(document.getElementById('edit_criticidade')) document.getElementById('edit_criticidade').value = dados.criticidade_code || '';
-        if(document.getElementById('edit_detector')) document.getElementById('edit_detector').value = dados.detector_code || '';
-
-        document.getElementById('edit_data_encerramento').value = dados.data_encerramento ? dados.data_encerramento.replaceAll('/', '-') : '';
-        document.getElementById('edit_data_prevista').value = dados.data_prevista_conclusao ? dados.data_prevista_conclusao.replaceAll('/', '-') : '';
-        document.getElementById('edit_ishikawa_link').value = dados.ishikawa_link || '';
-
-        let idsResponsaveis = dados.responsaveis_ids || [];
-        window.choicesResp.removeActiveItems();
-        if (idsResponsaveis.length > 0) { window.choicesResp.setChoiceByValue(idsResponsaveis.map(String)); }
-
-        new bootstrap.Modal(document.getElementById('modalEditarRNC')).show();
-    };
-
-    document.getElementById("formEditarRNC").addEventListener("submit", function(event){
-        event.preventDefault();
-        let formData = new FormData(this);
-        let rnc_id = document.getElementById('edit_rnc_id').value;
-        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        let btnSalvar = document.getElementById("btnSalvarEdicaoRNC");
-        let textoOriginal = btnSalvar.innerHTML;
-
-        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
-        btnSalvar.disabled = true;
-
-        fetch(`/qualidade/api/rncs/${rnc_id}/editar-avancado/`, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'sucesso'){
-                bootstrap.Modal.getInstance(document.getElementById('modalEditarRNC')).hide();
-                document.getElementById('formEditarRNC').reset();
-                table.setData();
-            } else { alert("O SERVIDOR RECUSOU A EDIÇÃO:\n" + data.mensagem); }
-        })
-        .catch(error => { console.error("Erro:", error); alert("Erro de conexão. Verifique o console."); })
-        .finally(() => { btnSalvar.innerHTML = textoOriginal; btnSalvar.disabled = false; });
-    });
-
-    window.abrirGaleriaImagens = function(dados, tipo) {
-        let containerGaleria = document.getElementById('galeria_content');
-        containerGaleria.innerHTML = '';
-        let urls = tipo === 'eficacia' ? (dados.eficacia_imagens_urls || []) : (dados.imagens_urls || []);
-        let tituloModal = document.querySelector('#modalGaleriaImagens .modal-title');
-
-        if (tipo === 'eficacia') { tituloModal.innerHTML = '<i class="bi bi-shield-check me-2"></i>Evidências de Eficácia'; }
-        else { tituloModal.innerHTML = '<i class="bi bi-images me-2"></i>Evidências Fotográficas da Falha'; }
-
-        urls.forEach(url => {
-            containerGaleria.innerHTML += `
-                <div class="col-md-4">
-                    <a href="${url}" target="_blank" title="Clique para abrir em tamanho real">
-                        <img src="${url}" class="img-fluid img-thumbnail shadow-sm rounded-2" style="max-height: 200px; width: 100%; object-fit: cover;">
-                    </a>
-                </div>`;
-        });
-        new bootstrap.Modal(document.getElementById('modalGaleriaImagens')).show();
-    };
-});
 </script>
+
+<script src="{% static 'js/qualidade/rnc_dashboard.js' %}"></script>
 {% endblock %}
