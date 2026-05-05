@@ -452,7 +452,7 @@
                     else if (tag.includes('warning')) iconType = 'warning';
 
                     Swal.fire({
-                        title: iconType === 'error' ? 'Acesso Negado!' : 'Aviso do Sistema',
+                        title: iconType === 'error' ? 'Erro no Sistema!' : 'Aviso do Sistema',
                         text: '{{ message }}',
                         icon: iconType,
                         confirmButtonColor: '#0d6efd',

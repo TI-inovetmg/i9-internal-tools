@@ -37,9 +37,17 @@ function iniciarPolling(taskId) {
                 window.location.reload();
             } else if (data.status === 'FAILURE') {
                 clearInterval(intervalo);
-                alert("Falha no ETL.");
+                Swal.fire({
+                    title: 'Erro no ETL!',
+                    text: 'Houve uma falha ao sincronizar com o Protheus. Tente novamente.',
+                    icon: 'error',
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Entendi'
+                }).then(() => {
+                    window.location.reload();
+                });
                 window.location.reload();
             }
         });
-    }, 3000); // Pergunta a cada 3 segundos
+    }, 3000);
 }
