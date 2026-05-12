@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Confirmar Cancelamento | I9TMG{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8">
+            <div class="card border-0 shadow-sm rounded-3 mt-5">
+                <div class="card-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <a href="{% url 'reservas_sala_dashboard' %}" class="btn btn-light border"><i class="bi bi-arrow-left"></i> Voltar</a>
+                    </div>
+                    <div class="alert alert-warning border-2 border-warning mb-4">
+                        <h5 class="alert-heading fw-bold mb-2"><i class="bi bi-exclamation-triangle"></i> Tem certeza?</h5>
+                        <p class="mb-0">Você está prestes a <strong>cancelar</strong> a seguinte reserva. Esta ação pode ser consultada no histórico.</p>
+                    </div>
+                    <div class="bg-light p-4 rounded-3 mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="small text-muted fw-bold text-uppercase mb-1">Data</div>
+                                <div class="fw-bold">{{ reserva.data|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="small text-muted fw-bold text-uppercase mb-1">Horário</div>
+                                <div class="fw-bold">{{ reserva.horario_inicial|time:"H:i" }} às {{ reserva.horario_final|time:"H:i" }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="small text-muted fw-bold text-uppercase mb-1">Descrição / Motivo</div>
+                                <div>{{ reserva.descricao }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="small text-muted fw-bold text-uppercase mb-1">Responsável</div>
+                                <div>{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <a href="{% url 'reservas_sala_dashboard' %}" class="btn btn-light border fw-bold">Não cancele</a>
+                        <button type="submit" name="cancel_scope" value="this" class="btn btn-outline-danger fw-bold">Cancelar apenas este dia</button>
+                        <button type="submit" name="cancel_scope" value="future" class="btn btn-danger fw-bold"><i class="bi bi-x-circle me-2"></i>Cancelar todos os dias</button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

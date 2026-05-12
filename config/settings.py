@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'engenharia',
     'pcp',
     'qualidade',
-    
+    'reserva_sala',
     'rest_framework'
 ]
 

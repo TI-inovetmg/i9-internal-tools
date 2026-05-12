@@ -34,5 +34,6 @@ urlpatterns = [
             path('rh/', include('rh.urls')),
             path('compras/', include('compras.urls')),
             path('qualidade/', include('qualidade.urls')),
-            path('engenharia/', include('engenharia.urls'))
+            path('engenharia/', include('engenharia.urls')),
+            path('reserva_sala/', include('reserva_sala.urls')),
         ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

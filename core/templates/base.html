@@ -405,6 +405,30 @@
                         </ul>
                     </div>
                 </li>
+                            <!--MODULO RESERVA SALA-->
+            <li class="nav-item mt-1">
+                    <a class="nav-link {% if name != 'reservas_sala_dashboard' and name != 'reserva_sala_nova' %}collapsed{% endif %} d-flex justify-content-between align-items-center"
+                   data-bs-toggle="collapse" href="#menuReservaSala" role="button"
+                   aria-expanded="{% if name == 'reservas_sala_dashboard' or name == 'reserva_sala_nova' %}true{% else %}false{% endif %}"
+                   aria-controls="menuReservaSala">
+                    <span><i class="bi bi-calendar-event me-2"></i> Reserva Sala</span>
+                    <i class="bi bi-chevron-down transition-icon"></i>
+                </a>
+                <div class="collapse {% if name == 'reservas_sala_dashboard' or name == 'reserva_sala_nova' %}show{% endif %}" id="menuReservaSala" data-bs-parent="#sidebarMenu">
+                    <ul class="nav flex-column ms-3 ps-2 border-start border-secondary mb-2 mt-1">
+                        <li class="nav-item">
+                            <a href="{% url 'reservas_sala_dashboard' %}" class="nav-link submenu-link {% if name == 'reservas_sala_dashboard' %}active-sub{% endif %}">
+                                <i class="bi bi-grid me-2"></i> Agendamentos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'reserva_sala_nova' %}" class="nav-link submenu-link {% if name == 'reserva_sala_nova' %}active-sub{% endif %}">
+                                <i class="bi bi-calendar-plus me-2"></i> Nova Reserva
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 

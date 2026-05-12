@@ -1,0 +1,102 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ titulo_pagina }} | I9TMG{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="mb-4">
+        <a href="{{ dashboard_url }}" class="btn btn-sm btn-white border rounded-circle shadow-sm text-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+        <span class="text-muted fw-semibold">Voltar para o calendário</span>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">{{ titulo_pagina }}</h4>
+                    <p class="text-muted small mb-0">Preencha os horários para evitar conflitos de agenda.</p>
+                </div>
+                <div class="text-md-end">
+                    <div class="text-muted small fw-bold text-uppercase">Usuário responsável</div>
+                    <div class="fw-semibold">{{ usuario_logado.get_full_name|default:usuario_logado.username }}</div>
+                </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger shadow-sm">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post" id="reserva-form" data-api-url="{% url 'api_verificar_conflito_reserva' %}" data-horarios-url="{% url 'api_horarios_disponiveis' %}" data-reserva-id="{{ reserva.id|default:'' }}" data-is-editing="{{ is_editing|yesno:'1,0' }}" data-existing-start="{{ existing_start }}" data-existing-end="{{ existing_end }}">
+                {% csrf_token %}
+                <input type="hidden" name="apply_to_future" id="id_apply_to_future" value="">
+                <div class="row g-4">
+
+                    <div class="col-12 bg-light p-3 rounded-3 border">
+                        <div class="small text-muted fw-bold text-uppercase mb-1">Identificação</div>
+                        <input type="text" class="form-control shadow-sm bg-white" value="{{ usuario_logado.get_full_name|default:usuario_logado.username }}" readonly aria-label="Usuário responsável">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="id_data" class="form-label fw-bold text-secondary small">Data <span class="text-danger">*</span></label>
+                        {{ form.data }}
+                        {% if form.data.errors %}<div class="invalid-feedback d-block">{{ form.data.errors|striptags }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="id_horario_inicial" class="form-label fw-bold text-secondary small">Horário inicial <span class="text-danger">*</span></label>
+                        <select name="horario_inicial" id="id_horario_inicial" class="form-control shadow-sm">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                        {% if form.horario_inicial.errors %}<div class="invalid-feedback d-block">{{ form.horario_inicial.errors|striptags }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="id_horario_final" class="form-label fw-bold text-secondary small">Horário final <span class="text-danger">*</span></label>
+                        <select name="horario_final" id="id_horario_final" class="form-control shadow-sm">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                        {% if form.horario_final.errors %}<div class="invalid-feedback d-block">{{ form.horario_final.errors|striptags }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label for="id_descricao" class="form-label fw-bold text-secondary small">Descrição / motivo <span class="text-danger">*</span></label>
+                        {{ form.descricao }}
+                        {% if form.descricao.errors %}<div class="invalid-feedback d-block">{{ form.descricao.errors|striptags }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-center">
+                        <div class="form-check">
+                            {{ form.recorrente_semanal }}
+                            <label class="form-check-label ms-2" for="id_recorrente_semanal">Repetir toda semana</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" id="recorrencia-weeks-wrap" style="display: none;">
+                        <label for="id_recorrencia_semanal_weeks" class="form-label fw-bold text-secondary small">Nº de semanas (inclui esta)</label>
+                        {{ form.recorrencia_semanal_weeks }}
+                        {% if form.recorrencia_semanal_weeks.errors %}<div class="invalid-feedback d-block">{{ form.recorrencia_semanal_weeks.errors|striptags }}</div>{% endif %}
+                        <div class="small text-muted">Padrão: 12 semanas</div>
+                    </div>
+
+                    <div class="col-12"><div id="alerta-conflito" class="alert alert-warning d-none mb-0"></div></div>
+
+                </div>
+
+                <div class="mt-5 d-flex justify-content-end gap-2 flex-wrap">
+                    <a href="{{ dashboard_url }}" class="btn btn-light border fw-bold px-4">Voltar</a>
+                    <button type="submit" class="btn btn-primary shadow-sm border-0 fw-bold px-5"><i class="bi bi-floppy-fill me-2"></i>Salvar</button>
+                </div>
+            </form>
+
+            {% if reserva and not reserva.cancelada %}
+                <form id="cancel-form" method="post" action="{{ cancel_url }}" class="mt-3">{% csrf_token %}
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-danger fw-bold px-4" onclick="if(confirm(`Cancelar esta reserva?`)) document.getElementById('cancel-form').submit();"><i class="bi bi-x-circle me-2"></i>Cancelar Reserva</button>
+                    </div>
+                </form>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+<script src="{{ reserva_form_js_url }}"></script>
+
+{% endblock %}
