@@ -2,6 +2,10 @@ import os
 import pandas as pd
 import numpy as np
 import sqlite3
+
+from django.core.checks import messages
+from select import error
+
 from core.utils.sftp_client import dowload_files_sftp
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,6 +23,8 @@ def extrair_dados_compras():
 
 def ler_tabela_sqlite(nome_arquivo):
     caminho = os.path.join(DATA_DIR, nome_arquivo)
+    if not os.path.exists(caminho):
+        raise FileNotFoundError(f"CRÍTICO: O arquivo {nome_arquivo} não foi encontrado no servidor. Falha no SFTP?")
     con = sqlite3.connect(caminho)
     con.text_factory = bytes
     cursor = con.cursor()
@@ -26,6 +32,8 @@ def ler_tabela_sqlite(nome_arquivo):
     table_name = cursor.fetchone()[0].decode('latin1', errors='ignore')
     df = pd.read_sql(f"SELECT * FROM {table_name}", con)
     con.close()
+
+
 
     def clean_bytes(valor):
         return valor.decode('latin1', errors='ignore') if isinstance(valor, bytes) else valor
@@ -35,19 +43,16 @@ def ler_tabela_sqlite(nome_arquivo):
 
     return df.astype(str)
 
+
 def carregar_dados_brutos():
     """Lê do disco apenas UMA VEZ e devolve os dados crus na RAM"""
     print("[ETL] Lendo arquivos SDB para a memória...")
-    return {
+    dados = {}
+    for arquivo in ARQUIVOS_COMPRAS:
+        chave_dicionario = arquivo[:3].lower()
+        dados[chave_dicionario] = ler_tabela_sqlite(arquivo)
 
-        'sc1': ler_tabela_sqlite('sc10101.sdb'),
-        'sc7': ler_tabela_sqlite('sc70101.sdb'),
-        'sa2': ler_tabela_sqlite('sa20101.sdb'),
-        'sd1': ler_tabela_sqlite('sd10101.sdb'),
-        'afg': ler_tabela_sqlite('afg0101.sdb'),
-        'sb1': ler_tabela_sqlite('sb10101.sdb'),
-        'sx5': ler_tabela_sqlite('sx50101.sdb'),
-    }
+    return dados
 
 
 def processar_dados(dados_brutos):
