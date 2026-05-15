@@ -82,21 +82,21 @@ class RNC(models.Model):
 
 
     # --- Identificação e Origem ---
-    registrador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='rncs_registradas', verbose_name='Registrado por')
-    data_abertura = models.DateField('Data de Abertura', auto_now_add=True)
-    projeto_cod = models.CharField('Código do Projeto', max_length=50, blank=True, null=True)
+    registrador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='rncs_registradas', verbose_name='Registrado por', db_index=True)
+    data_abertura = models.DateField('Data de Abertura', auto_now_add=True, db_index=True)
+    projeto_cod = models.CharField('Código do Projeto', max_length=50, blank=True, null=True, db_index=True)
     elemento_rastreador = models.CharField('Elemento Rastreador', max_length=100, blank=True, null=True)
 
     # --- Classificações Base (Choices) ---
-    detector = models.CharField('Detector', max_length=2, choices=DetectorChoices.choices)
-    categoria = models.CharField('Categoria da NC', max_length=2, choices=CategoriaChoices.choices, default=CategoriaChoices.COMERCIAL)
-    criticidade = models.CharField('Nível de Criticidade', max_length=1, choices=CriticidadeChoices.choices)
-    status = models.CharField('Status', max_length=2, choices=StatusChoices.choices, default=StatusChoices.PRELIMINAR)
-    origem = models.CharField('Origem', max_length=2, choices=Origem.choices, default=Origem.COMERCIAL)
+    detector = models.CharField('Detector', max_length=2, choices=DetectorChoices.choices, db_index=True)
+    categoria = models.CharField('Categoria da NC', max_length=2, choices=CategoriaChoices.choices, default=CategoriaChoices.COMERCIAL, db_index=True)
+    criticidade = models.CharField('Nível de Criticidade', max_length=1, choices=CriticidadeChoices.choices, db_index=True)
+    status = models.CharField('Status', max_length=2, choices=StatusChoices.choices, default=StatusChoices.PRELIMINAR, db_index=True)
+    origem = models.CharField('Origem', max_length=2, choices=Origem.choices, default=Origem.COMERCIAL, db_index=True)
 
     # --- Relacionamentos de Domínio (ForeignKeys) ---
-    equipamento = models.ForeignKey(Equipamento, on_delete=models.PROTECT, verbose_name='Equipamento', blank=True, null=True)
-    local = models.ForeignKey(Local, on_delete=models.PROTECT, verbose_name='Local')
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.PROTECT, verbose_name='Equipamento', blank=True, null=True, db_index=True)
+    local = models.ForeignKey(Local, on_delete=models.PROTECT, verbose_name='Local', db_index=True)
 
     # --- Textos Analíticos e Ações ---
     descricao = models.TextField('Descrição da Não Conformidade')
@@ -110,9 +110,9 @@ class RNC(models.Model):
 
     # --- Gestão de Prazos e Responsáveis ---
     # ManyToMany permite vincular N usuários como responsáveis por uma única RNC
-    responsaveis = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='rncs_responsaveis', blank=True, verbose_name='Responsáveis')
-    data_prevista_conclusao = models.DateField('Data Prevista de Conclusão', blank=True, null=True)
-    data_encerramento = models.DateField('Data de Encerramento', blank=True, null=True)
+    responsaveis = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='rncs_responsaveis', blank=True, verbose_name='Responsáveis', db_index=True)
+    data_prevista_conclusao = models.DateField('Data Prevista de Conclusão', blank=True, null=True, db_index=True)
+    data_encerramento = models.DateField('Data de Encerramento', blank=True, null=True, db_index=True)
 
     # --- Controle de Concorrência e Auditoria ---
     versao = models.IntegerField('Versão do Registro', default=1)
@@ -136,7 +136,6 @@ class RNCImagem(models.Model):
     class Meta:
         verbose_name = 'Imagem da RNC'
         verbose_name_plural = 'Imagens da RNC'
-
 
 class RNCEficaciaImagem(models.Model):
     rnc = models.ForeignKey(RNC, on_delete=models.CASCADE, related_name='eficacia_imagens')
