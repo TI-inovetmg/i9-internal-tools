@@ -162,18 +162,6 @@ const RNCDashboard = (function() {
                     let dados = cell.getRow().getData();
                     if(dados.qtd_imagens > 0){ ui.abrirGaleriaImagens(dados, TIPO_GALERIA.NC); }
                 }},
-                {title: "Imagem Eficácia", field: "qtd_imagens_eficacia", hozAlign: "center", formatter: function(cell){
-                    let qtd = cell.getValue();
-                    if(qtd > 0) {
-                        return `<button type="button" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;">
-                                    <i class="bi bi-image"></i> (${qtd})
-                                </button>`;
-                    }
-                    return "-";
-                }, cellClick: function(e, cell){
-                    let dados = cell.getRow().getData();
-                    if(dados.qtd_imagens_eficacia > 0){ ui.abrirGaleriaImagens(dados, TIPO_GALERIA.EFICACIA); }
-                }},
                 {title: "Descrição da não conformidade", field: "descricao", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: function(cell){ return CONFIG.isSGQ; }},
                 {title: "Correção Imediata", field: "correcao", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
                 {title: "Causas Principais", field: "causas_principais", formatter: "textarea", editor: "textarea", headerFilter: "input", editable: true},
@@ -213,6 +201,18 @@ const RNCDashboard = (function() {
                         `;
                     }
                     return "-";
+                }},
+                {title: "Imagem Eficácia", field: "qtd_imagens_eficacia", hozAlign: "center", formatter: function(cell){
+                    let qtd = cell.getValue();
+                    if(qtd > 0) {
+                        return `<button type="button" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;">
+                                    <i class="bi bi-image"></i> (${qtd})
+                                </button>`;
+                    }
+                    return "-";
+                }, cellClick: function(e, cell){
+                    let dados = cell.getRow().getData();
+                    if(dados.qtd_imagens_eficacia > 0){ ui.abrirGaleriaImagens(dados, TIPO_GALERIA.EFICACIA); }
                 }}
             ],
             locale: "pt-br",
