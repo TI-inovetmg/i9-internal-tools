@@ -18,14 +18,13 @@
         <h3 class="fw-bold" style="color: var(--azul-principal);">
             <i class="bi bi-graph-up-arrow me-2"></i> Inteligência de Compras
         </h3>
-
-        <form method="POST" action="{% url 'atualizar_dados_dw' %}" onsubmit="mostrarCarregamento(this)">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-cloud-arrow-down-fill me-2" id="icone-sync"></i>
-                <span id="texto-sync">Sincronizar com Protheus</span>
+        <div>
+            <button class="btn btn-primary btn-sync-global shadow-sm"
+                data-url="{% url 'atualizar_dados_dw' %}"
+                data-csrf="{{ csrf_token }}">
+                <i class="bi bi-arrow-clockwise me-2"></i> Sincronizar Protheus
             </button>
-        </form>
+        </div>
     </div>
 
     <div class="filter-card">
@@ -133,15 +132,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/compras/sync_global.js' %}"></script>
 <script>
-    // Carregamento de Dados do Django
     const projetosLabelsOriginal = {{ projetos_labels|safe }};
     const projetosDataOriginal = {{ projetos_data|safe }};
     const drilldownDict = {{ drilldown_dict|safe }};
 
-    let estadoGrafico = 'projetos'; // Controla se estamos vendo Projetos ou Tarefas
+    let estadoGrafico = 'projetos';
 
-    // Configuração do Gráfico de Projetos / Tarefas
     const ctxProjetos = document.getElementById('graficoProjetos').getContext('2d');
     let chartProjetos = new Chart(ctxProjetos, {
         type: 'bar',
@@ -164,10 +162,9 @@
                     const nomeProjeto = chartProjetos.data.labels[indexClicado];
 
                     if (drilldownDict[nomeProjeto]) {
-                        // Aplica o Drill-down (Muda os dados para as Tarefas)
                         chartProjetos.data.labels = drilldownDict[nomeProjeto].labels;
                         chartProjetos.data.datasets[0].data = drilldownDict[nomeProjeto].data;
-                        chartProjetos.data.datasets[0].backgroundColor = '#FF742E'; // Muda de cor para indicar detalhe
+                        chartProjetos.data.datasets[0].backgroundColor = '#FF742E';
                         chartProjetos.update();
 
                         document.getElementById('tituloGraficoProjetos').innerText = 'Custo por Tarefa - ' + nomeProjeto;
@@ -179,7 +176,6 @@
         }
     });
 
-    // Função do Botão Voltar
     function voltarParaProjetos() {
         chartProjetos.data.labels = projetosLabelsOriginal;
         chartProjetos.data.datasets[0].data = projetosDataOriginal;
@@ -191,7 +187,6 @@
         estadoGrafico = 'projetos';
     }
 
-    // Gráfico de Fornecedores
     const ctxFornecedores = document.getElementById('graficoFornecedores').getContext('2d');
     new Chart(ctxFornecedores, {
         type: 'bar',
@@ -205,15 +200,13 @@
             }]
         },
         options: {
-            indexAxis: 'y', // Barra horizontal
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } }
         }
     });
 </script>
-
-{% block extra_scripts %}
-<script src="{% static 'js/compras/sync_dashboard.js' %}"></script>
 {% endblock %}
+{% block extra_scripts %}
 {% endblock %}

@@ -21,7 +21,7 @@
             </a>
 
             <button id="btnSync"
-                class="btn btn-sm btn-outline-dark shadow-sm"
+                class="btn btn-sm btn-outline-dark shadow-sm btn-sync-global"
                 data-url="{% url 'atualizar_dados_dw' %}"
                 data-csrf="{{ csrf_token }}">
                 <i class="bi bi-arrow-clockwise me-1"></i> Sincronizar Protheus
@@ -147,5 +147,7 @@
         </div>
     </div>
 </div>
-<script src="{% static 'js/compras/avaliacao_fornecedores/listar_pedidos.js' %}"></script>
+<script src="{% static 'js/compras/sync_global.js' %}"></script>
+{% endblock %}
+{% block extra_scripts %}
 {% endblock %}

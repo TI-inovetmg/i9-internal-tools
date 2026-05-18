@@ -26,13 +26,11 @@
             <i class="bi bi-list-check me-2"></i> Fila Operacional de Compras
         </h3>
         <div>
-            <form method="POST" action="{% url 'atualizar_dados_dw' %}" onsubmit="mostrarCarregamento(this)">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-cloud-arrow-down-fill me-2" id="icone-sync"></i>
-                    <span id="texto-sync">Sincronizar com Protheus</span>
-                </button>
-            </form>
+            <button class="btn btn-primary btn-sync-global shadow-sm"
+                data-url="{% url 'atualizar_dados_dw' %}"
+                data-csrf="{{ csrf_token }}">
+                <i class="bi bi-arrow-clockwise me-2"></i> Sincronizar Protheus
+            </button>
         </div>
     </div>
 
@@ -212,12 +210,9 @@
                 </ul>
             </nav>
         </div>
-
     </div>
 </div>
-
-{% block extra_scripts %}
-<script src="{% static 'js/compras/sync_dashboard.js' %}"></script>
+<script src="{% static 'js/compras/sync_global.js' %}"></script>
 {% endblock %}
-
+{% block extra_scripts %}
 {% endblock %}
