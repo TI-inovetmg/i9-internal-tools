@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from .models import ChamadoImagem
+from .models import Chamado, ChamadoImagem
 from .tasks import task_notificar_chamado
 
 
@@ -36,12 +36,17 @@ def assumir_chamado(*, chamado, tecnico):
 
 
 def atualizar_atendimento(*, form):
-    chamado = form.instance
-    status_anterior = chamado.status
+    estado_anterior = Chamado.objects.only('status', 'tecnico_id').get(pk=form.instance.pk)
     chamado = form.save(commit=False)
     chamado.full_clean()
     chamado.save()
-    _notificar_se_status_mudou(chamado.id, status_anterior, chamado.status)
+    _notificar_alteracoes_atendimento(
+        chamado_id=chamado.id,
+        status_anterior=estado_anterior.status,
+        status_atual=chamado.status,
+        tecnico_anterior_id=estado_anterior.tecnico_id,
+        tecnico_atual_id=chamado.tecnico_id,
+    )
     return chamado
 
 
@@ -70,6 +75,15 @@ def _notificar_se_status_mudou(chamado_id, status_anterior, status_atual):
 
     tipo = 'CONCLUSAO' if status_atual == 'CONCLUIDO' else status_atual
     _agendar_notificacao(chamado_id, tipo)
+
+
+def _notificar_alteracoes_atendimento(*, chamado_id, status_anterior, status_atual, tecnico_anterior_id, tecnico_atual_id):
+    if status_anterior != status_atual:
+        _notificar_se_status_mudou(chamado_id, status_anterior, status_atual)
+        return
+
+    if tecnico_anterior_id != tecnico_atual_id and tecnico_atual_id:
+        _agendar_notificacao(chamado_id, 'ATRIBUIDO')
 
 
 def _agendar_notificacao(chamado_id, tipo, countdown=None):
