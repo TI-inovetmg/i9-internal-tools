@@ -3,6 +3,7 @@ from .models import Chamado
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -60,7 +61,7 @@ class ChamadoForm(forms.ModelForm):
 class AtendimentoChamadoForm(forms.ModelForm):
     class Meta:
         model = Chamado
-        fields = ['status', 'prioridade', 'categoria', 'setor', 'solucao']
+        fields = ['tecnico', 'status', 'prioridade', 'categoria', 'setor', 'solucao']
         widgets = {
             'solucao': forms.Textarea(attrs={
                 'rows': 4,
@@ -70,6 +71,20 @@ class AtendimentoChamadoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        tecnicos = User.objects.filter(
+            Q(is_active=True),
+            Q(is_ti=True) | Q(is_diretoria=True) | Q(is_superuser=True),
+        ).order_by('first_name', 'last_name', 'username')
+
+        if self.instance and self.instance.tecnico_id:
+            tecnicos = User.objects.filter(
+                Q(pk=self.instance.tecnico_id) | Q(pk__in=tecnicos.values('pk'))
+            ).distinct()
+
+        self.fields['tecnico'].queryset = tecnicos
+        self.fields['tecnico'].required = False
+        self.fields['tecnico'].empty_label = 'Sem tecnico responsavel'
 
         if self.instance and not self.instance.validado_pelo_solicitante:
             opcoes_atuais = list(self.fields['status'].choices)

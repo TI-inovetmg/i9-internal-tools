@@ -4,9 +4,9 @@ from django.utils import timezone
 from unittest.mock import patch
 
 from usuarios.models import CustomUser
-from .forms import ChamadoForm
+from .forms import AtendimentoChamadoForm, ChamadoForm
 from .models import Chamado
-from .services import abrir_chamado
+from .services import abrir_chamado, atualizar_atendimento
 
 
 class ChamadoModelTests(TestCase):
@@ -97,6 +97,18 @@ class ChamadoServiceTests(TestCase):
             email='abertura@example.com',
             password='senha-forte-123',
         )
+        self.tecnico = CustomUser.objects.create_user(
+            username='tecnico.um',
+            email='tecnico.um@example.com',
+            password='senha-forte-123',
+            is_ti=True,
+        )
+        self.novo_tecnico = CustomUser.objects.create_user(
+            username='tecnico.dois',
+            email='tecnico.dois@example.com',
+            password='senha-forte-123',
+            is_ti=True,
+        )
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=False)
     def test_abertura_cria_chamado_e_agenda_notificacao_pos_commit(self):
@@ -116,3 +128,59 @@ class ChamadoServiceTests(TestCase):
         self.assertEqual(chamado.solicitante, self.user)
         self.assertEqual(Chamado.objects.count(), 1)
         apply_async.assert_called_once_with(args=[chamado.id, 'ABERTURA'], countdown=5)
+
+    def test_atendimento_permite_trocar_tecnico_sem_alterar_status(self):
+        chamado = Chamado.objects.create(
+            solicitante=self.user,
+            tecnico=self.tecnico,
+            titulo='Troca de tecnico',
+            descricao='Chamado em atendimento',
+            categoria='HARDWARE',
+            prioridade='MEDIA',
+            setor='T.I',
+            status='EM_ATENDIMENTO',
+        )
+        form = AtendimentoChamadoForm(data={
+            'tecnico': self.novo_tecnico.pk,
+            'status': 'EM_ATENDIMENTO',
+            'prioridade': 'MEDIA',
+            'categoria': 'HARDWARE',
+            'setor': 'T.I',
+            'solucao': '',
+        }, instance=chamado)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch('ti.services.task_notificar_chamado.delay') as delay:
+            with self.captureOnCommitCallbacks(execute=True):
+                atualizado = atualizar_atendimento(form=form)
+
+        self.assertEqual(atualizado.tecnico, self.novo_tecnico)
+        delay.assert_called_once_with(chamado.id, 'ATRIBUIDO')
+
+    def test_atendimento_com_mudanca_de_status_prioriza_notificacao_de_status(self):
+        chamado = Chamado.objects.create(
+            solicitante=self.user,
+            tecnico=self.tecnico,
+            titulo='Resolucao com troca',
+            descricao='Chamado em atendimento',
+            categoria='HARDWARE',
+            prioridade='MEDIA',
+            setor='T.I',
+            status='EM_ATENDIMENTO',
+        )
+        form = AtendimentoChamadoForm(data={
+            'tecnico': self.novo_tecnico.pk,
+            'status': 'RESOLVIDO',
+            'prioridade': 'MEDIA',
+            'categoria': 'HARDWARE',
+            'setor': 'T.I',
+            'solucao': 'Equipamento substituido',
+        }, instance=chamado)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch('ti.services.task_notificar_chamado.delay') as delay:
+            with self.captureOnCommitCallbacks(execute=True):
+                atualizado = atualizar_atendimento(form=form)
+
+        self.assertEqual(atualizado.tecnico, self.novo_tecnico)
+        delay.assert_called_once_with(chamado.id, 'RESOLVIDO')
