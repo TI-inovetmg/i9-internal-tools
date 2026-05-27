@@ -1,32 +1,24 @@
 from django.db import models
 
 class EstruturaProduto(models.Model):
-    codigo_pai = models.CharField(max_length=50, verbose_name="Código Pai", db_index=True)
-    descricao_pai = models.CharField(max_length=255, verbose_name="Descrição Pai")
-    tipo_pai = models.CharField(max_length=10, blank=True, null=True, verbose_name="Tipo Pai", db_index=True)
-    grupo_pai = models.CharField(max_length=20, blank=True, null=True, verbose_name="Grupo Pai")
-    unidade_pai = models.CharField(max_length=10, blank=True, null=True, verbose_name="Unidade Pai")
-    base_estrutural = models.FloatField(default=1.0, verbose_name="Base Estrutural")
+    codigo_vo = models.CharField(max_length=50, default=0.0, verbose_name="Código Vo", db_index=True)
+    descricao_vo = models.CharField(max_length=255, default='', verbose_name="Descrição Vo")
 
-    nivel = models.CharField(max_length=10, verbose_name="Nível")
-    codigo_componente = models.CharField(max_length=50, verbose_name="Código Componente", db_index=True)
-    descricao_componente = models.CharField(max_length=255, verbose_name="Descrição Componente")
-    tipo_componente = models.CharField(max_length=10, blank=True, null=True, verbose_name="Tipo Componente")
-    grupo_componente = models.CharField(max_length=20, blank=True, null=True, verbose_name="Grupo Componente")
-    unidade_medida_filho = models.CharField(max_length=10, blank=True, null=True, verbose_name="UM Componente")
+    codigo_pai = models.CharField(max_length=50, default=0.0, verbose_name="Código Pai", db_index=True)
+    descricao_pai = models.CharField(max_length=255, default='', verbose_name="Descrição Pai")
 
-    quantidade_necessaria = models.FloatField(default=0.0, verbose_name="Qtd Necessária")
-    quantidade = models.FloatField(default=0.0, verbose_name="Quantidade")
-    perda_percentual = models.FloatField(default=0.0, verbose_name="Perda %")
-    tipo_quantidade = models.CharField(max_length=50, blank=True, null=True, verbose_name="Tipo Quantidade")
+    codigo_filho = models.CharField(max_length=50, default=0.0, verbose_name="Código filho", db_index=True)
+    descricao_filho = models.CharField(max_length=255, default='', verbose_name="Descrição filho")
 
-    inicio_validade = models.DateField(blank=True, null=True, verbose_name="Ini. Validade", db_index=True)
-    fim_validade = models.DateField(blank=True, null=True, verbose_name="Fim Validade", db_index=True)
+    quantidade_necessaria_filho = models.DecimalField(max_digits=12, decimal_places=4, default=0.0, verbose_name="Qtd Necessária")
+    quantidade_em_op = models.DecimalField(max_digits=12, decimal_places=4, default=0.0, verbose_name="Quantidade em OP")
+    falta_produzir = models.DecimalField(max_digits=12, decimal_places=4, default=0.0, verbose_name="Falta Produzir")
+
     data_importacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Importação", db_index=True)
 
     class Meta:
-        verbose_name = "Estrutura Simples"
-        verbose_name_plural = "Estruturas Simples"
+        verbose_name = "Estrutura e Produção"
+        verbose_name_plural = "Estruturas e Produção"
 
     def __str__(self):
-        return f"{self.codigo_pai} -> {self.codigo_componente} (Qtd: {self.quantidade_necessaria})"
+        return f"{self.codigo_vo} | {self.codigo_pai} -> {self.codigo_filho}"

@@ -6,6 +6,7 @@
 {% block content %}
 <div class="container-fluid">
 
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="text-dark fw-bold mb-0">
             <i class="bi bi-diagram-3-fill me-2" style="color: var(--laranja-principal);"></i>
@@ -13,81 +14,258 @@
         </h4>
     </div>
 
+    <!-- Card de sincronização -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-            <h5 class="card-title fw-bold text-dark mb-3">Sincronização com ERP (Protheus)</h5>
+
+            <h5 class="card-title fw-bold text-dark mb-3">
+                Sincronização com ERP (Protheus)
+            </h5>
+
             <p class="text-muted mb-4">
-                Esta rotina conecta-se ao servidor Totvs via SFTP, extrai as tabelas de estrutura de produtos (SG1 e SB1), processa as regras de negócio e atualiza a base de dados interna do portal.
+                Esta rotina conecta-se ao servidor Totvs via SFTP, extrai as tabelas
+                de estrutura de produtos (SG1, SB1 e SC2), processa as regras de negócio
+                e atualiza a base de dados interna do portal.
             </p>
-            <form method="POST" action="{% url 'atualizar_banco_estrutura' %}">
-                <button type="button" class="btn btn-primary px-4 py-2 btn-sync-global shadow-sm"
-                    style="background-color: var(--azul-principal); border: none;"
-                    data-url="{% url 'atualizar_banco_estrutura' %}"
-                    data-check-url="{% url 'checar_status_task_global' task_id='TASK_ID_PLACEHOLDER' %}"
-                    data-csrf="{{ csrf_token }}">
-                    <i class="bi bi-arrow-repeat me-2"></i> Atualizar Base de Dados
-                </button>
-            </form>
+
+            <!-- Caso utilize JS/AJAX -->
+            <button
+                type="button"
+                class="btn btn-primary px-4 py-2 btn-sync-global shadow-sm"
+                style="background-color: var(--azul-principal); border: none;"
+                data-url="{% url 'atualizar_banco_estrutura' %}"
+                data-check-url="{% url 'checar_status_task_global' task_id='TASK_ID_PLACEHOLDER' %}"
+                data-csrf="{{ csrf_token }}"
+            >
+                <i class="bi bi-arrow-repeat me-2"></i>
+                Atualizar Base de Dados
+            </button>
+
         </div>
     </div>
 
+    <!-- Barra superior -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="text-dark fw-bold mb-0">Visualização de Estrutura</h5>
+
+        <h5 class="text-dark fw-bold mb-0">
+            Visualização de Estrutura
+        </h5>
 
         <div class="d-flex gap-2">
-            <form method="GET" action="{% url 'extrai_estrutura_simples' %}" class="d-flex">
-                <input type="text" name="busca" class="form-control form-control-sm me-2" placeholder="Buscar código ou descrição..." value="{{ request.GET.busca }}">
-                <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+
+            <!-- Busca -->
+            <form
+                method="GET"
+                action="{% url 'extrai_estrutura_simples' %}"
+                class="d-flex"
+            >
+                <input
+                    type="text"
+                    name="busca"
+                    class="form-control form-control-sm me-2"
+                    placeholder="Código ou descrição..."
+                    value="{{ request.GET.busca }}"
+                >
+
+                <button
+                    type="submit"
+                    class="btn btn-sm btn-outline-secondary"
+                >
+                    <i class="bi bi-search"></i>
+                </button>
+
                 {% if request.GET.busca %}
-                    <a href="{% url 'extrai_estrutura_simples' %}" class="btn btn-sm btn-outline-danger ms-1" title="Limpar Busca"><i class="bi bi-x-lg"></i></a>
+                    <a
+                        href="{% url 'extrai_estrutura_simples' %}"
+                        class="btn btn-sm btn-outline-danger ms-1"
+                        title="Limpar Busca"
+                    >
+                        <i class="bi bi-x-lg"></i>
+                    </a>
                 {% endif %}
             </form>
 
-            {% if estruturas %}
-            <a href="{% url 'exportar_estrutura_excel' %}" class="btn btn-success btn-sm shadow-sm rounded-3 d-flex align-items-center">
-                <i class="bi bi-file-earmark-excel me-2"></i> Exportar
-            </a>
+            <!-- Exportação -->
+            {% if dados_agrupados %}
+                <a
+                    href="{% url 'exportar_estrutura_excel' %}"
+                    class="btn btn-success btn-sm shadow-sm rounded-3 d-flex align-items-center"
+                >
+                    <i class="bi bi-file-earmark-excel me-2"></i>
+                    Exportar
+                </a>
             {% endif %}
+
         </div>
     </div>
 
+    <!-- Card principal -->
     <div class="card border-0 shadow-sm rounded-4">
+
         <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 500px;">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light sticky-top">
-                        <tr>
-                            <th>Nível</th>
-                            <th>Cód. Pai</th>
-                            <th>Descrição Pai</th>
-                            <th>Código Componente</th>
-                            <th>Descrição Componente</th>
-                            <th>Qtd. Necessária</th>
-                            <th>UM</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in estruturas %}
-                        <tr>
-                            <td><span class="badge bg-secondary">{{ item.nivel }}</span></td>
-                            <td class="fw-semibold">{{ item.codigo_pai }}</td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ item.descricao_pai }}</td>
-                            <td class="fw-bold">{{ item.codigo_componente }}</td>
-                            <td>{{ item.descricao_componente }}</td>
-                            <td class="text-end">{{ item.quantidade_necessaria }}</td>
-                            <td>{{ item.unidade_medida_filho }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                Nenhum dado encontrado. Clique em "Atualizar Base de Dados".
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+            {% if dados_agrupados %}
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Componente Filho</th>
+                                <th>Necessidade Total</th>
+                                <th>Qtd em OP</th>
+                                <th>Status (Falta)</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for vo_cod, vo_data in dados_agrupados.items %}
+
+                                <!-- Projeto / VO -->
+                                <tr class="table-primary fw-bold">
+                                    <td colspan="4">
+                                        <i class="bi bi-folder-fill me-2"></i>
+
+                                        <span class="badge bg-primary me-2">
+                                            VO
+                                        </span>
+
+                                        PROJETO:
+                                        {{ vo_cod }}
+
+                                        {% if vo_data.descricao %}
+                                            - {{ vo_data.descricao }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                {% for pai_cod, pai_data in vo_data.pais.items %}
+
+                                    <!-- Pai 1180 -->
+                                    <tr class="table-secondary fw-semibold">
+                                        <td colspan="4" class="ps-4">
+                                            <i class="bi bi-box-seam me-2"></i> CONJUNTO PAI: {{ pai_cod }} - {{ pai_data.descricao_pai }}
+                                        </td>
+                                    </tr>
+
+                                    {% for filho in pai_data.filhos %}
+
+                                        <!-- Filhos 1160 -->
+                                        <tr>
+
+                                            <td class="ps-5">
+
+                                                <span class="badge bg-secondary me-2">
+                                                    1160
+                                                </span>
+
+                                                <span class="text-muted">
+                                                    {{ filho.codigo_filho }}
+                                                </span>
+
+                                                {% if filho.descricao_filho %}
+                                                    - {{ filho.descricao_filho }}
+                                                {% endif %}
+
+                                            </td>
+
+                                            <td>{{ filho.quantidade_necessaria_filho|floatformat:2 }}</td>
+
+                                            <td>
+                                                <span class="badge bg-info">{{ filho.quantidade_em_op|floatformat:2 }}</span>
+                                            </td>
+
+                                            <td>
+                                                {% if filho.falta_produzir > 0 %}
+                                                    <span class="badge bg-danger">
+                                                        Faltam {{ filho.falta_produzir|floatformat:2 }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-success">
+                                                        Coberto
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+
+                                    {% endfor %}
+
+                                {% endfor %}
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <!-- Paginação -->
+                {% if page_obj %}
+
+                    <nav aria-label="Page navigation" class="mt-4 mb-3">
+
+                        <ul class="pagination justify-content-center">
+
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ page_obj.previous_page_number }}{% if busca %}&busca={{ busca }}{% endif %}"
+                                    >
+                                        Anterior
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }}
+                                    de
+                                    {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a
+                                        class="page-link"
+                                        href="?page={{ page_obj.next_page_number }}{% if busca %}&busca={{ busca }}{% endif %}"
+                                    >
+                                        Próximo
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                        </ul>
+
+                    </nav>
+
+                {% endif %}
+
+            {% else %}
+
+                <!-- Sem registros -->
+                <div class="p-5 text-center">
+
+                    <i class="bi bi-inbox display-5 text-muted"></i>
+
+                    <h5 class="mt-3 text-muted">
+                        Nenhuma estrutura encontrada
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Realize uma sincronização ou ajuste os filtros de busca.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
         </div>
+
     </div>
 
 </div>

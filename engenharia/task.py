@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.core.cache import cache
 import logging
-from engenharia.services.etl_service import EngenhariaETLService
+from engenharia.services.etl_service import AnaliseProducaoETLService
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def task_sincronizar_protheus():
     logger.info("[CELERY] Iniciando Task Sincronização Engenharia...")
 
     try:
-        EngenhariaETLService.executar()
+        AnaliseProducaoETLService.executar()
 
         logger.info("[CELERY] Task Sincronização Engenharia finalizada com sucesso.")
         return "Sincronização concluída com sucesso."

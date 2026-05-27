@@ -1,12 +1,12 @@
 import pandas as pd
-from celery.result import AsyncResult
-from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.core.cache import cache
 from .task import task_sincronizar_protheus
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from engenharia.services.producao_service import ProducaoQueryService
 
 
 from core.decorators import exige_permissao
@@ -16,48 +16,59 @@ from .models import EstruturaProduto
 @login_required(login_url='/login/')
 @exige_permissao(['engenharia'])
 def extrai_estrutura_simples(request):
-    # Busca padrão
-    estruturas = EstruturaProduto.objects.all().order_by('codigo_pai', 'nivel')
+    """View Magra: Apenas lida com Request, Paginação e Response."""
 
-    # Captura o que o usuário digitou no Input de busca do HTML
-    busca = request.GET.get('busca')
+    busca = request.GET.get('busca', '')
 
-    # Se ele digitou algo, aplica o filtro no banco!
-    if busca:
-        estruturas = estruturas.filter(
-            Q(codigo_pai__icontains=busca) |
-            Q(codigo_componente__icontains=busca) |
-            Q(descricao_pai__icontains=busca) |
-            Q(descricao_componente__icontains=busca)
-        )
+    # Delega o trabalho pesado para a Camada de Serviço
+    arvore_projetos = ProducaoQueryService.construir_arvore_projetos(termo_busca=busca)
+
+    # Paginação em Nível de Projeto (Paginamos as chaves do dicionário)
+    lista_projetos = list(arvore_projetos.items())
+    paginator = Paginator(lista_projetos, 1)  # 1 Projetos inteiros por página
+    page_number = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    # Reconstroi o dicionário apenas com a "fatia" da página atual
+    projetos_paginados = dict(page_obj.object_list)
 
     context = {
-        'estruturas': estruturas
+        'dados_agrupados': projetos_paginados,
+        'page_obj': page_obj,
+        'busca': busca
     }
-    return render(request, 'engenharia/extrai_estrutura_simples.html', context)
 
+    return render(request, 'engenharia/extrai_estrutura_simples.html', context)
 
 
 @login_required(login_url='/login/')
 @exige_permissao(['engenharia'])
 def exportar_estrutura_excel(request):
-    """Gera um arquivo Excel fresh a partir dos dados do banco"""
-    # Busca os dados
-    estruturas = EstruturaProduto.objects.all().values()
-    df = pd.DataFrame(list(estruturas))
+    """View Magra: Intermedia a requisição HTTP e o retorno do Excel."""
 
-    cols_datetime_com_tz = df.select_dtypes(include=['datetimetz']).columns
+    # Capta o filtro de busca da URL, se o usuário estiver buscando algo específico
+    busca = request.GET.get('busca', '')
 
-    for col in cols_datetime_com_tz:
-        df[col] = df[col].dt.tz_localize(None)
+    # Pede ao serviço o DataFrame pronto e limpo
+    df = ProducaoQueryService.gerar_dataframe_exportacao(termo_busca=busca)
 
-    # 2. Configura a Resposta HTTP para Excel
+    # Configura a Resposta HTTP dizendo pro navegador que é um arquivo Excel
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="Relatorio_Engenharia.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Acompanhamento_Producao_Engenharia.xlsx"'
 
-    # 3. Salva o DataFrame direto na resposta
+    # Grava o DataFrame diretamente na resposta de memória (Sem sujar o disco)
     with pd.ExcelWriter(response, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False)
+        if df.empty:
+            # Se vier vazio, exporta uma planilha com aviso
+            pd.DataFrame([{"Aviso": "Nenhum dado encontrado para os filtros aplicados."}]).to_excel(writer, index=False)
+        else:
+            df.to_excel(writer, index=False, sheet_name='Analise_Producao')
 
     return response
 
